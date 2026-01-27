@@ -3,54 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maxutra — Мессенджер</title>
+    <title>Maxutra Messenger</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <h1>💬 Maxutra — Твой защищённый мессенджер</h1>
-
-    <!-- Регистрация -->
-    <div id="regSection" class="section">
-        <h2>Регистрация</h2>
-        <input type="text" id="username" placeholder="Никнейм" required>
-        <input type="password" id="password" placeholder="Пароль" required>
-        <button onclick="register()">Зарегистрироваться</button>
-        <p id="regError" style="color: red; display: none;">Никнейм уже занят</p>
-    </div>
-
-    <!-- Вход -->
-    <div id="loginSection" class="section" style="display: none;">
-        <h2>Вход</h2>
-        <input type="text" id="loginUsername" placeholder="Никнейм" required>
-        <input type="password" id="loginPassword" placeholder="Пароль" required>
-        <button onclick="login()">Войти</button>
-        <p id="loginError" style="color: red; display: none;">Неверный ник или пароль</p>
-    </div>
-
-    <!-- Чат (появляется после входа) -->
-    <div id="chatSection" style="display: none;">
-        <div class="chat-header">
-            <h2>Чат</h2>
-            <button onclick="logout()">Выйти</button>
-        </div>
-
-        <div id="usersList" class="users-list">
-            <h3>Пользователи</h3>
-            <input type="text" id="searchInput" placeholder="Поиск по никнейму..." oninput="searchUsers()">
-            <ul id="users"></ul>
-        </div>
-
-        <div class="chat-window">
-            <div id="messages"></div>
-            <div class="input-group">
-                <input type="text" id="messageInput" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">Отправить</button>
+    <!-- Экран авторизации -->
+    <div id="authScreen" class="screen active">
+        <div class="auth-container">
+            <div class="logo">
+                <h1>💬 Maxutra</h1>
+                <p>Безопасный мессенджер</p>
+            </div>
+            
+            <div class="auth-form">
+                <input type="text" id="usernameInput" placeholder="Введите ваш никнейм" maxlength="20">
+                <button onclick="login()">Начать общение</button>
+                <p class="hint">Просто введите имя и начинайте общаться!</p>
             </div>
         </div>
     </div>
-</div>
 
-<script src="script.js"></script>
+    <!-- Экран чата -->
+    <div id="chatScreen" class="screen">
+        <div class="chat-container">
+            <!-- Боковая панель с пользователями -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3>👥 Участники</h3>
+                    <div class="user-info">
+                        <span id="currentUserName"></span>
+                        <button onclick="logout()" class="logout-btn">🚪</button>
+                    </div>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="userSearch" placeholder="Поиск..." oninput="searchUsers()">
+                </div>
+                <div id="usersList" class="users-list"></div>
+            </div>
+
+            <!-- Основная область чата -->
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div id="chatWithInfo">
+                        <span id="chatWithName">Выберите собеседника</span>
+                    </div>
+                </div>
+                
+                <div id="messagesContainer" class="messages-container"></div>
+                
+                <div class="message-input-container">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение..." 
+                           onkeypress="if(event.key==='Enter') sendMessage()" disabled>
+                    <button onclick="sendMessage()" disabled>📤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="chat.js"></script>
 </body>
 </html>
