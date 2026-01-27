@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maxutra — Мессенджер</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>💬 Maxutra — Твой защищённый мессенджер</h1>
+
+    <!-- Регистрация -->
+    <div id="regSection" class="section">
+        <h2>Регистрация</h2>
+        <input type="text" id="username" placeholder="Никнейм" required>
+        <input type="password" id="password" placeholder="Пароль" required>
+        <button onclick="register()">Зарегистрироваться</button>
+        <p id="regError" style="color: red; display: none;">Никнейм уже занят</p>
+    </div>
+
+    <!-- Вход -->
+    <div id="loginSection" class="section" style="display: none;">
+        <h2>Вход</h2>
+        <input type="text" id="loginUsername" placeholder="Никнейм" required>
+        <input type="password" id="loginPassword" placeholder="Пароль" required>
+        <button onclick="login()">Войти</button>
+        <p id="loginError" style="color: red; display: none;">Неверный ник или пароль</p>
+    </div>
+
+    <!-- Чат (появляется после входа) -->
+    <div id="chatSection" style="display: none;">
+        <div class="chat-header">
+            <h2>Чат</h2>
+            <button onclick="logout()">Выйти</button>
+        </div>
+
+        <div id="usersList" class="users-list">
+            <h3>Пользователи</h3>
+            <input type="text" id="searchInput" placeholder="Поиск по никнейму..." oninput="searchUsers()">
+            <ul id="users"></ul>
+        </div>
+
+        <div class="chat-window">
+            <div id="messages"></div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">Отправить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
