@@ -2,7 +2,6 @@
 let currentChatWith = null;
 let messages = {};
 let activeChats = new Set();
-let socket = null;
 
 // === АУДИОЗВОНОК ===
 let callPeerConnection = null;
