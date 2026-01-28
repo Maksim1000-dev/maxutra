@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');  // ← ИЗМЕНИЛОСЬ
 
 const app = express();
 const server = http.createServer(app);
@@ -283,3 +283,4 @@ server.listen(PORT, () => {
     console.log(`   - API Health: http://localhost:${PORT}/health`);
     console.log(`   - Пользователей в базе: ${Object.keys(users).length}`);
 });
+
