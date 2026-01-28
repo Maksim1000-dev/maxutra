@@ -12,13 +12,25 @@
         <div class="auth-container">
             <div class="logo">
                 <h1>💬 Maxutra</h1>
-                <p>Безопасный мессенджер</p>
+                <p>Безопасный мессенджер с паролями</p>
             </div>
             
             <div class="auth-form">
-                <input type="text" id="usernameInput" placeholder="Введите ваш никнейм" maxlength="20">
-                <button onclick="login()">Начать общение</button>
-                <p class="hint">Просто введите имя и начинайте общаться!</p>
+                <div class="input-group">
+                    <input type="text" id="usernameInput" placeholder="Введите ваш никнейм" maxlength="20">
+                    <div id="passwordGroup" class="password-group" style="display: none;">
+                        <input type="password" id="passwordInput" placeholder="Введите пароль">
+                        <input type="password" id="confirmPasswordInput" placeholder="Повторите пароль" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="auth-buttons">
+                    <button id="loginBtn" onclick="handleAuth()" style="display: none;">Войти</button>
+                    <button id="registerBtn" onclick="handleAuth()" style="display: none;">Зарегистрироваться</button>
+                    <button id="startBtn" onclick="checkUsername()">Продолжить</button>
+                </div>
+                
+                <div id="authMessage" class="auth-message"></div>
             </div>
         </div>
     </div>
@@ -26,35 +38,58 @@
     <!-- Экран чата -->
     <div id="chatScreen" class="screen">
         <div class="chat-container">
-            <!-- Боковая панель с пользователями -->
+            <!-- Боковая панель -->
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <h3>👥 Участники</h3>
+                    <h3>👥 Поиск пользователей</h3>
                     <div class="user-info">
                         <span id="currentUserName"></span>
                         <button onclick="logout()" class="logout-btn">🚪</button>
                     </div>
                 </div>
+                
                 <div class="search-container">
-                    <input type="text" id="userSearch" placeholder="Поиск..." oninput="searchUsers()">
+                    <input type="text" id="userSearch" placeholder="Введите никнейм для поиска...">
+                    <button onclick="searchUser()">🔍 Найти</button>
                 </div>
-                <div id="usersList" class="users-list"></div>
+                
+                <div id="searchResults" class="search-results"></div>
+                
+                <div id="chatsList" class="chats-list">
+                    <h4>💬 Активные чаты</h4>
+                    <div id="activeChats"></div>
+                </div>
             </div>
 
             <!-- Основная область чата -->
             <div class="chat-area">
                 <div class="chat-header">
                     <div id="chatWithInfo">
-                        <span id="chatWithName">Выберите собеседника</span>
+                        <div class="chat-avatar">👤</div>
+                        <div>
+                            <div id="chatWithName">Выберите собеседника</div>
+                            <div class="chat-status">offline</div>
+                        </div>
                     </div>
                 </div>
                 
-                <div id="messagesContainer" class="messages-container"></div>
+                <div id="messagesContainer" class="messages-container">
+                    <div class="welcome-message">
+                        <h3>💬 Добро пожаловать в Maxutra!</h3>
+                        <p>Найдите пользователя по никнейму чтобы начать общение</p>
+                    </div>
+                </div>
                 
                 <div class="message-input-container">
-                    <input type="text" id="messageInput" placeholder="Введите сообщение..." 
-                           onkeypress="if(event.key==='Enter') sendMessage()" disabled>
+                    <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
                     <button onclick="sendMessage()" disabled>📤</button>
+                </div>
+
+                <!-- Панель звонка -->
+                <div id="callControls" class="call-controls" style="display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center; gap: 10px; display: flex; justify-content: center; align-items: center;">
+                    <button id="muteMicBtn" class="call-btn" onclick="toggleMic()" title="Выключить микрофон">🎙️</button>
+                    <button id="muteSpeakerBtn" class="call-btn" onclick="toggleSpeaker()" title="Отключить звук собеседника">🔊</button>
+                    <button id="endCallBtn" class="call-btn end-call" onclick="endCall()" title="Повесить трубку">📞</button>
                 </div>
             </div>
         </div>
