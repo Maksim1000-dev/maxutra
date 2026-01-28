@@ -21,7 +21,6 @@ body {
     display: flex;
 }
 
-/* Экран авторизации */
 #authScreen {
     justify-content: center;
     align-items: center;
@@ -51,26 +50,29 @@ body {
     font-size: 1.1em;
 }
 
-.auth-form input {
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group input {
     width: 100%;
     padding: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     font-size: 16px;
     transition: border-color 0.3s;
 }
 
-.auth-form input:focus {
+.input-group input:focus {
     outline: none;
     border-color: #667eea;
 }
 
-.auth-form button {
+.auth-buttons button {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    margin-bottom: 10px;
     border: none;
     border-radius: 10px;
     font-size: 16px;
@@ -79,17 +81,44 @@ body {
     transition: transform 0.2s;
 }
 
-.auth-form button:hover {
+#startBtn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+#loginBtn {
+    background: #28a745;
+    color: white;
+}
+
+#registerBtn {
+    background: #007bff;
+    color: white;
+}
+
+.auth-buttons button:hover {
     transform: translateY(-2px);
 }
 
-.hint {
+.auth-message {
     margin-top: 15px;
-    color: #888;
+    padding: 10px;
+    border-radius: 5px;
     font-size: 0.9em;
 }
 
-/* Экран чата */
+.auth-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.auth-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
 #chatScreen {
     background: #f0f2f5;
 }
@@ -100,9 +129,8 @@ body {
     height: 100vh;
 }
 
-/* Боковая панель */
 .sidebar {
-    width: 300px;
+    width: 350px;
     background: white;
     border-right: 1px solid #e0e0e0;
     display: flex;
@@ -147,23 +175,35 @@ body {
 .search-container {
     padding: 15px;
     border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
 }
 
 .search-container input {
-    width: 100%;
+    flex: 1;
     padding: 10px;
     border: 1px solid #e0e0e0;
     border-radius: 20px;
     font-size: 14px;
 }
 
-.users-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
+.search-container button {
+    padding: 10px 15px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
 }
 
-.user-item {
+.search-results {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.search-result-item {
     padding: 15px;
     margin: 5px 0;
     border-radius: 10px;
@@ -174,16 +214,11 @@ body {
     gap: 10px;
 }
 
-.user-item:hover {
+.search-result-item:hover {
     background: #f8f9fa;
 }
 
-.user-item.active {
-    background: #667eea;
-    color: white;
-}
-
-.user-avatar {
+.search-result-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -195,24 +230,66 @@ body {
     color: white;
 }
 
-.user-info-small {
+.chats-list {
     flex: 1;
+    padding: 15px;
+    overflow-y: auto;
 }
 
-.user-name {
+.chats-list h4 {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.chat-item {
+    padding: 12px;
+    margin: 5px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid transparent;
+}
+
+.chat-item:hover {
+    background: #f8f9fa;
+}
+
+.chat-item.active {
+    background: #667eea;
+    color: white;
+    border-left-color: #764ba2;
+}
+
+.chat-item-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 600;
 }
 
-.user-status {
+.chat-item-info {
+    flex: 1;
+}
+
+.chat-item-name {
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.chat-item-status {
     font-size: 0.8em;
-    color: #666;
+    opacity: 0.7;
 }
 
-.user-item.active .user-status {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Основная область чата */
 .chat-area {
     flex: 1;
     display: flex;
@@ -246,6 +323,17 @@ body {
     padding: 20px;
     overflow-y: auto;
     background: #f0f2f5;
+}
+
+.welcome-message {
+    text-align: center;
+    color: #666;
+    margin-top: 50px;
+}
+
+.welcome-message h3 {
+    margin-bottom: 10px;
+    color: #667eea;
 }
 
 .message {
@@ -308,7 +396,93 @@ body {
     cursor: not-allowed;
 }
 
-/* Адаптивность */
+.call-controls {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    border-radius: 8px;
+}
+
+.call-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5em;
+    cursor: pointer;
+    background: #e9ecef;
+    color: #495057;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.call-btn:hover {
+    background: #dee2e6;
+}
+
+.call-btn:active {
+    transform: scale(0.95);
+}
+
+.end-call {
+    background: #dc3545;
+    color: white;
+}
+
+.end-call:hover {
+    background: #c82333;
+}
+
+.muted {
+    background: #6c757d !important;
+    color: white !important;
+}
+
+.speaker-muted {
+    background: #6c757d !important;
+    color: white !important;
+}
+
+.system-message {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.call-button {
+    background: none;
+    border: none;
+    font-size: 1.8em;
+    cursor: pointer;
+    margin-left: 10px;
+    color: #667eea;
+}
+
+#callNotification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #667eea;
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 300px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
 @media (max-width: 768px) {
     .chat-container {
         flex-direction: column;
@@ -316,10 +490,15 @@ body {
     
     .sidebar {
         width: 100%;
-        height: 200px;
+        height: 300px;
     }
     
     .chat-area {
-        height: calc(100vh - 200px);
+        height: calc(100vh - 300px);
+    }
+    
+    .auth-container {
+        margin: 20px;
+        padding: 30px 20px;
     }
 }
