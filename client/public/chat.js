@@ -1,7 +1,8 @@
-// Глобальные переменные чата
+// Глобальные переменные
 let currentChatWith = null;
 let messages = {};
 let activeChats = new Set();
+let socket = null;
 
 // === АУДИОЗВОНОК ===
 let callPeerConnection = null;
@@ -88,14 +89,12 @@ function handleWebSocketMessage(data) {
     }
 }
 
-// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: ОБНОВЛЕНИЕ ОНЛАЙН-ПОЛЬЗОВАТЕЛЕЙ ===
+// Обновление списка онлайн-пользователей
 function updateOnlineUsers(users) {
-    // Просто обновляем статус — в реальном проекте можно добавить индикаторы
-    console.log('Онлайн пользователи:', users);
     renderActiveChats();
 }
 
-// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: СООБЩЕНИЕ В ЧАТ ===
+// Показать сообщение в чате
 function showChatMessage(message, type) {
     const messagesContainer = document.getElementById('messagesContainer');
     const messageElement = document.createElement('div');
@@ -118,7 +117,7 @@ function showChatMessage(message, type) {
     setTimeout(() => messageElement.remove(), 3000);
 }
 
-// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: СИСТЕМНЫЕ СООБЩЕНИЯ ===
+// Добавить системное сообщение
 function addSystemMessage(text) {
     const messagesContainer = document.getElementById('messagesContainer');
     const systemMessage = document.createElement('div');
@@ -402,7 +401,7 @@ function playRemoteAudio() {
     audio.play().catch(e => console.log("Ошибка воспроизведения звука:", e));
 }
 
-// === ФАЙЛЫ: Настройка перетаскивания ===
+// === ФАЙЛЫ ===
 
 function setupFileDragDrop() {
     const messagesContainer = document.getElementById('messagesContainer');
@@ -426,25 +425,18 @@ function setupFileDragDrop() {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.style.display = 'none';
-
         const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
+        if (files.length > 0) handleFileUpload(files[0]);
     });
 
     messagesContainer.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.style.display = 'none';
-
         const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
+        if (files.length > 0) handleFileUpload(files[0]);
     });
 }
 
-// Обработка загрузки файла
 function handleFileUpload(file) {
     if (!currentChatWith) {
         showChatMessage('Выберите собеседника для отправки файла', 'error');
@@ -481,9 +473,7 @@ function handleFileUpload(file) {
     reader.readAsDataURL(file);
 }
 
-// Получение файла
 function receiveFile(from, fileInfo, fileData) {
-    // АВТОМАТИЧЕСКОЕ СОЗДАНИЕ ЧАТА
     if (!activeChats.has(from)) {
         activeChats.add(from);
         renderActiveChats();
@@ -509,7 +499,6 @@ function receiveFile(from, fileInfo, fileData) {
     }
 }
 
-// Отображение сообщения с файлом
 function displayFileMessage(from, fileInfo, fileData) {
     const messagesContainer = document.getElementById('messagesContainer');
     const welcomeMessage = messagesContainer.querySelector('.welcome-message');
@@ -582,16 +571,13 @@ function sendMessage() {
 
 // Получение сообщения
 function receiveMessage(from, text, timestamp) {
-    // АВТОМАТИЧЕСКОЕ СОЗДАНИЕ ЧАТА
+    // Автоматически создаём чат при получении первого сообщения
     if (!activeChats.has(from)) {
         activeChats.add(from);
         renderActiveChats();
     }
 
-    if (!messages[from]) {
-        messages[from] = [];
-    }
-
+    if (!messages[from]) messages[from] = [];
     messages[from].push({ text, timestamp, type: 'received' });
 
     if (from === currentChatWith) {
@@ -604,10 +590,7 @@ function receiveMessage(from, text, timestamp) {
 
 // Добавление сообщения в историю
 function addMessageToHistory(author, text, messageType, timestamp) {
-    if (!messages[author]) {
-        messages[author] = [];
-    }
-
+    if (!messages[author]) messages[author] = [];
     messages[author].push({ text, timestamp, type: messageType });
     saveChatHistory();
 
@@ -796,21 +779,17 @@ function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: Настройка событий чата ===
+// Настройка событий чата
 function setupChatEvents() {
     const messageInput = document.getElementById('messageInput');
     const userSearch = document.getElementById('userSearch');
 
     messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
+        if (e.key === 'Enter') sendMessage();
     });
 
     userSearch.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            searchUser();
-        }
+        if (e.key === 'Enter') searchUser();
     });
 
     // Добавляем кнопку звонка в заголовок чата
