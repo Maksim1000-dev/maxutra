@@ -1,8 +1,8 @@
-// Глобальные переменные
+// Глобальные переменные чата
 let currentChatWith = null;
 let messages = {};
 let activeChats = new Set();
-let socket = null;
+let socket = null; // Используем глобальный socket из script.js
 
 // === АУДИОЗВОНОК ===
 let callPeerConnection = null;
@@ -19,43 +19,17 @@ const MAX_FILE_SIZE = 300 * 1024 * 1024; // 300 МБ
 
 // Инициализация чата
 function initChat(username) {
-    connectWebSocket(username);
     setupChatEvents();
     loadChatHistory();
     setupFileDragDrop();
 }
 
-// Подключение WebSocket
+// Подключение WebSocket (уже инициализирован в script.js)
 function connectWebSocket(username) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-    socket = new WebSocket(wsUrl);
-
-    socket.onopen = function() {
-        console.log('WebSocket подключен');
-        socket.send(JSON.stringify({
-            type: 'register',
-            username: username
-        }));
-    };
-
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        handleWebSocketMessage(data);
-    };
-
-    socket.onclose = function() {
-        console.log('WebSocket отключен');
-        setTimeout(() => connectWebSocket(username), 3000);
-    };
-
-    socket.onerror = function(error) {
-        console.error('WebSocket ошибка:', error);
-    };
+    // WebSocket уже подключен через script.js — здесь не нужно повторно создавать
 }
 
-// Обработка сообщений WebSocket
+// Обработка сообщений WebSocket (вызывается из script.js)
 function handleWebSocketMessage(data) {
     switch(data.type) {
         case 'userList':
@@ -94,7 +68,7 @@ function updateOnlineUsers(users) {
     renderActiveChats();
 }
 
-// Показать сообщение в чате
+// Показ сообщения в чате
 function showChatMessage(message, type) {
     const messagesContainer = document.getElementById('messagesContainer');
     const messageElement = document.createElement('div');
@@ -117,7 +91,7 @@ function showChatMessage(message, type) {
     setTimeout(() => messageElement.remove(), 3000);
 }
 
-// Добавить системное сообщение
+// Добавление системного сообщения
 function addSystemMessage(text) {
     const messagesContainer = document.getElementById('messagesContainer');
     const systemMessage = document.createElement('div');
@@ -401,7 +375,7 @@ function playRemoteAudio() {
     audio.play().catch(e => console.log("Ошибка воспроизведения звука:", e));
 }
 
-// === ФАЙЛЫ ===
+// === ФАЙЛЫ: Настройка перетаскивания ===
 
 function setupFileDragDrop() {
     const messagesContainer = document.getElementById('messagesContainer');
@@ -425,18 +399,25 @@ function setupFileDragDrop() {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.style.display = 'none';
+
         const files = e.dataTransfer.files;
-        if (files.length > 0) handleFileUpload(files[0]);
+        if (files.length > 0) {
+            handleFileUpload(files[0]);
+        }
     });
 
     messagesContainer.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.style.display = 'none';
+
         const files = e.dataTransfer.files;
-        if (files.length > 0) handleFileUpload(files[0]);
+        if (files.length > 0) {
+            handleFileUpload(files[0]);
+        }
     });
 }
 
+// Обработка загрузки файла
 function handleFileUpload(file) {
     if (!currentChatWith) {
         showChatMessage('Выберите собеседника для отправки файла', 'error');
@@ -473,6 +454,7 @@ function handleFileUpload(file) {
     reader.readAsDataURL(file);
 }
 
+// Получение файла
 function receiveFile(from, fileInfo, fileData) {
     if (!activeChats.has(from)) {
         activeChats.add(from);
@@ -499,6 +481,7 @@ function receiveFile(from, fileInfo, fileData) {
     }
 }
 
+// Отображение сообщения с файлом
 function displayFileMessage(from, fileInfo, fileData) {
     const messagesContainer = document.getElementById('messagesContainer');
     const welcomeMessage = messagesContainer.querySelector('.welcome-message');
@@ -571,13 +554,15 @@ function sendMessage() {
 
 // Получение сообщения
 function receiveMessage(from, text, timestamp) {
-    // Автоматически создаём чат при получении первого сообщения
     if (!activeChats.has(from)) {
         activeChats.add(from);
         renderActiveChats();
     }
 
-    if (!messages[from]) messages[from] = [];
+    if (!messages[from]) {
+        messages[from] = [];
+    }
+
     messages[from].push({ text, timestamp, type: 'received' });
 
     if (from === currentChatWith) {
@@ -590,7 +575,10 @@ function receiveMessage(from, text, timestamp) {
 
 // Добавление сообщения в историю
 function addMessageToHistory(author, text, messageType, timestamp) {
-    if (!messages[author]) messages[author] = [];
+    if (!messages[author]) {
+        messages[author] = [];
+    }
+
     messages[author].push({ text, timestamp, type: messageType });
     saveChatHistory();
 
@@ -779,17 +767,21 @@ function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Настройка событий чата
+// === НАСТРОЙКА СОБЫТИЙ ЧАТА ===
 function setupChatEvents() {
     const messageInput = document.getElementById('messageInput');
     const userSearch = document.getElementById('userSearch');
 
     messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') sendMessage();
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
     });
 
     userSearch.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') searchUser();
+        if (e.key === 'Enter') {
+            searchUser();
+        }
     });
 
     // Добавляем кнопку звонка в заголовок чата
