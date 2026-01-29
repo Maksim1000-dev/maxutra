@@ -1,5 +1,5 @@
 let currentUser = null;
-let socket = null; // ✅ ЭТО ОСТАЁТСЯ — ИСПОЛЬЗУЕТСЯ В chat.js
+let socket = null; // ✅ ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ — ИСПОЛЬЗУЕТСЯ В chat.js
 let authState = 'username';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -211,4 +211,3 @@ function initializeChat() {
         initChat(currentUser);
     }
 }
-
