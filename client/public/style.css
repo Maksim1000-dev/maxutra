@@ -119,6 +119,10 @@ body {
     border: 1px solid #c3e6cb;
 }
 
+#authMessage {
+    display: none;
+}
+
 #chatScreen {
     background: #f0f2f5;
 }
@@ -318,6 +322,32 @@ body {
     font-weight: 600;
 }
 
+/* Зона перетаскивания файлов */
+.drop-zone {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(102, 126, 234, 0.9);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.drop-content h3 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.drop-content p {
+    opacity: 0.8;
+}
+
 .messages-container {
     flex: 1;
     padding: 20px;
@@ -363,6 +393,32 @@ body {
     margin-right: auto;
     border-bottom-left-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Сообщение о файле */
+.message.file {
+    background: #e3f2fd;
+    border: 2px solid #2196f3;
+    cursor: pointer;
+}
+
+.message.file:hover {
+    background: #bbdefb;
+}
+
+.file-icon {
+    font-size: 1.5em;
+    margin-right: 10px;
+}
+
+.file-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.file-size {
+    font-size: 0.8em;
+    color: #666;
 }
 
 .message-input-container {
@@ -451,36 +507,11 @@ body {
 }
 
 .system-message {
-    padding: 10px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
     margin: 10px 0;
-    border-radius: 6px;
-    font-size: 0.9em;
-}
-
-.call-button {
-    background: none;
-    border: none;
-    font-size: 1.8em;
-    cursor: pointer;
-    margin-left: 10px;
-    color: #667eea;
-}
-
-#callNotification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #667eea;
-    color: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-width: 300px;
-    font-family: 'Segoe UI', sans-serif;
+    padding: 5px;
 }
 
 @media (max-width: 768px) {
@@ -495,10 +526,5 @@ body {
     
     .chat-area {
         height: calc(100vh - 300px);
-    }
-    
-    .auth-container {
-        margin: 20px;
-        padding: 30px 20px;
     }
 }
