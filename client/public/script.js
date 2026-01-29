@@ -1,15 +1,12 @@
-// Глобальные переменные
 let currentUser = null;
 let socket = null;
-let authState = 'username'; // username → password → confirm
+let authState = 'username';
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     checkSavedSession();
     setupAuthEvents();
 });
 
-// Проверка сохранённой сессии
 function checkSavedSession() {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
@@ -19,7 +16,6 @@ function checkSavedSession() {
     }
 }
 
-// Настройка событий авторизации
 function setupAuthEvents() {
     const usernameInput = document.getElementById('usernameInput');
     const passwordInput = document.getElementById('passwordInput');
@@ -46,7 +42,6 @@ function setupAuthEvents() {
     });
 }
 
-// 🔥 ВАЖНО: ДОБАВЛЯЕМ ФУНКЦИЮ checkUsername()
 async function checkUsername() {
     const usernameInput = document.getElementById('usernameInput');
     const username = usernameInput.value.trim();
@@ -61,7 +56,6 @@ async function checkUsername() {
         return;
     }
     
-    // Проверяем существование пользователя на сервере
     try {
         const response = await fetch('/check-user', {
             method: 'POST',
@@ -74,11 +68,9 @@ async function checkUsername() {
         const data = await response.json();
         
         if (data.exists) {
-            // Пользователь существует - показываем поле для пароля
             showPasswordField('login');
             showAuthMessage('Пользователь найден. Введите пароль.', 'success');
         } else {
-            // Пользователь не существует - показываем поля для регистрации
             showPasswordField('register');
             showAuthMessage('Новый пользователь. Придумайте пароль.', 'success');
         }
@@ -89,7 +81,6 @@ async function checkUsername() {
     }
 }
 
-// Показ полей для пароля
 function showPasswordField(mode) {
     const passwordGroup = document.getElementById('passwordGroup');
     const passwordInput = document.getElementById('passwordInput');
@@ -119,7 +110,6 @@ function showPasswordField(mode) {
     passwordInput.focus();
 }
 
-// Обработка авторизации/регистрации
 async function handleAuth() {
     const username = document.getElementById('usernameInput').value.trim();
     const password = document.getElementById('passwordInput').value;
@@ -151,7 +141,6 @@ async function handleAuth() {
         const data = await response.json();
         
         if (data.success) {
-            // Успешная авторизация/регистрация
             currentUser = username;
             localStorage.setItem('currentUser', username);
             showChatScreen();
@@ -166,7 +155,6 @@ async function handleAuth() {
     }
 }
 
-// Выход из системы
 function logout() {
     if (socket) {
         socket.close();
@@ -176,12 +164,10 @@ function logout() {
     localStorage.removeItem('chatHistory');
     currentUser = null;
     
-    // Сброс формы авторизации
     resetAuthForm();
     showAuthScreen();
 }
 
-// Сброс формы авторизации
 function resetAuthForm() {
     document.getElementById('usernameInput').value = '';
     document.getElementById('passwordInput').value = '';
@@ -196,13 +182,11 @@ function resetAuthForm() {
     hideAuthMessage();
 }
 
-// Показать экран авторизации
 function showAuthScreen() {
     document.getElementById('authScreen').classList.add('active');
     document.getElementById('chatScreen').classList.remove('active');
 }
 
-// Показать экран чата
 function showChatScreen() {
     document.getElementById('authScreen').classList.remove('active');
     document.getElementById('chatScreen').classList.add('active');
@@ -210,7 +194,6 @@ function showChatScreen() {
     hideAuthMessage();
 }
 
-// Показать сообщение авторизации
 function showAuthMessage(message, type) {
     const authMessage = document.getElementById('authMessage');
     authMessage.textContent = message;
@@ -218,13 +201,11 @@ function showAuthMessage(message, type) {
     authMessage.style.display = 'block';
 }
 
-// Скрыть сообщение авторизации
 function hideAuthMessage() {
     const authMessage = document.getElementById('authMessage');
     authMessage.style.display = 'none';
 }
 
-// Инициализация чата
 function initializeChat() {
     if (typeof initChat === 'function') {
         initChat(currentUser);
