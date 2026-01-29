@@ -23,7 +23,7 @@ function initChat(username) {
     setupFileDragDrop();
 }
 
-// Обработка сообщений WebSocket (вызывается из script.js)
+// Обработка сообщений WebSocket
 function handleWebSocketMessage(data) {
     switch(data.type) {
         case 'userList':
