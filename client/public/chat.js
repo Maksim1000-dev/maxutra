@@ -2,7 +2,6 @@
 let currentChatWith = null;
 let messages = {};
 let activeChats = new Set();
-let socket = null; // Используем глобальный socket из script.js
 
 // === АУДИОЗВОНОК ===
 let callPeerConnection = null;
@@ -22,11 +21,6 @@ function initChat(username) {
     setupChatEvents();
     loadChatHistory();
     setupFileDragDrop();
-}
-
-// Подключение WebSocket (уже инициализирован в script.js)
-function connectWebSocket(username) {
-    // WebSocket уже подключен через script.js — здесь не нужно повторно создавать
 }
 
 // Обработка сообщений WebSocket (вызывается из script.js)
@@ -767,7 +761,7 @@ function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// === НАСТРОЙКА СОБЫТИЙ ЧАТА ===
+// Настройка событий чата
 function setupChatEvents() {
     const messageInput = document.getElementById('messageInput');
     const userSearch = document.getElementById('userSearch');
