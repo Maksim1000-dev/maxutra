@@ -88,6 +88,57 @@ function handleWebSocketMessage(data) {
     }
 }
 
+// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: ОБНОВЛЕНИЕ ОНЛАЙН-ПОЛЬЗОВАТЕЛЕЙ ===
+function updateOnlineUsers(users) {
+    // Просто обновляем статус — в реальном проекте можно добавить индикаторы
+    console.log('Онлайн пользователи:', users);
+    renderActiveChats();
+}
+
+// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: СООБЩЕНИЕ В ЧАТ ===
+function showChatMessage(message, type) {
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageElement = document.createElement('div');
+    
+    messageElement.className = `system-message ${type}`;
+    messageElement.textContent = message;
+    messageElement.style.cssText = `
+        text-align: center;
+        color: ${type === 'error' ? '#dc3545' : '#28a745'};
+        background: ${type === 'error' ? '#f8d7da' : '#d4edda'};
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 6px;
+        font-size: 0.9em;
+    `;
+
+    messagesContainer.appendChild(messageElement);
+    scrollToBottom();
+
+    setTimeout(() => messageElement.remove(), 3000);
+}
+
+// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: СИСТЕМНЫЕ СООБЩЕНИЯ ===
+function addSystemMessage(text) {
+    const messagesContainer = document.getElementById('messagesContainer');
+    const systemMessage = document.createElement('div');
+    
+    systemMessage.className = 'system-message';
+    systemMessage.textContent = text;
+    systemMessage.style.cssText = `
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        margin: 10px 0;
+        padding: 5px;
+        background: #f0f0f0;
+        border-radius: 6px;
+    `;
+
+    messagesContainer.appendChild(systemMessage);
+    scrollToBottom();
+}
+
 // Обработка уведомления о звонке
 function handleCallNotification(from, offer) {
     callFrom = from;
@@ -414,7 +465,6 @@ function handleFileUpload(file) {
             type: file.type
         };
 
-        // Отправляем файл через WebSocket
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
                 type: 'file',
@@ -424,7 +474,6 @@ function handleFileUpload(file) {
                 fileData: fileData
             }));
 
-            // Добавляем сообщение в чат
             addMessageToHistory(currentUser, `[Файл: ${file.name}]`, 'sent', new Date().toISOString());
         }
     };
@@ -434,7 +483,7 @@ function handleFileUpload(file) {
 
 // Получение файла
 function receiveFile(from, fileInfo, fileData) {
-    // Автоматически создаём чат с отправителем, если его нет
+    // АВТОМАТИЧЕСКОЕ СОЗДАНИЕ ЧАТА
     if (!activeChats.has(from)) {
         activeChats.add(from);
         renderActiveChats();
@@ -478,7 +527,6 @@ function displayFileMessage(from, fileInfo, fileData) {
     `;
 
     messageElement.onclick = () => {
-        // Скачать файл
         const a = document.createElement('a');
         a.href = fileData;
         a.download = fileInfo.name;
@@ -625,7 +673,9 @@ async function searchUser() {
     try {
         const response = await fetch('/search-user', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ username, searcher: currentUser })
         });
 
@@ -744,4 +794,42 @@ function selectChat(username) {
 function scrollToBottom() {
     const messagesContainer = document.getElementById('messagesContainer');
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// === НЕДОСТАЮЩАЯ ФУНКЦИЯ: Настройка событий чата ===
+function setupChatEvents() {
+    const messageInput = document.getElementById('messageInput');
+    const userSearch = document.getElementById('userSearch');
+
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    userSearch.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchUser();
+        }
+    });
+
+    // Добавляем кнопку звонка в заголовок чата
+    const chatHeader = document.querySelector('.chat-header');
+    const callBtn = document.createElement('button');
+    callBtn.innerHTML = '📞';
+    callBtn.className = 'call-button';
+    callBtn.style = `
+        background: none;
+        border: none;
+        font-size: 1.8em;
+        cursor: pointer;
+        margin-left: 10px;
+        color: #667eea;
+    `;
+    callBtn.title = "Начать аудиозвонок";
+    callBtn.onclick = startCall;
+
+    chatHeader.appendChild(callBtn);
+
+    loadChatHistory();
 }
