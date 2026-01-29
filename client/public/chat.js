@@ -1,207 +1,15 @@
-// Глобальные переменные чата
-let currentChatWith = null;
-let messages = {};
-let activeChats = new Set();
+// === УПРОЩЁННЫЕ И РАБОЧИЕ ЗВОНКИ ===
 
-// === АУДИОЗВОНОК ===
-let callPeerConnection = null;
-let callLocalStream = null;
-let callRemoteStream = null;
-let isCallActive = false;
-let isCallIncoming = false;
-let callFrom = null;
-let isMicMuted = false;
-let isSpeakerMuted = false;
-
-// Инициализация чата
-function initChat(username) {
-    connectWebSocket(username);
-    setupChatEvents();
-    loadChatHistory();
-}
-
-// Подключение WebSocket
-function connectWebSocket(username) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-    socket = new WebSocket(wsUrl);
-
-    socket.onopen = function() {
-        console.log('WebSocket подключен');
-        socket.send(JSON.stringify({
-            type: 'register',
-            username: username
-        }));
-    };
-
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        handleWebSocketMessage(data);
-    };
-
-    socket.onclose = function() {
-        console.log('WebSocket отключен');
-        setTimeout(() => connectWebSocket(username), 3000);
-    };
-
-    socket.onerror = function(error) {
-        console.error('WebSocket ошибка:', error);
-    };
-}
-
-// Обработка сообщений WebSocket
-function handleWebSocketMessage(data) {
-    switch(data.type) {
-        case 'userList':
-            updateOnlineUsers(data.users);
-            break;
-        case 'message':
-            receiveMessage(data.from, data.text, data.timestamp);
-            break;
-        case 'userJoined':
-            addSystemMessage(`${data.username} присоединился к чату`);
-            updateOnlineUsers(data.users || []);
-            break;
-        case 'userLeft':
-            addSystemMessage(`${data.username} покинул чат`);
-            updateOnlineUsers(data.users || []);
-            break;
-        case 'callNotification':
-            handleCallNotification(data.from, data.offer);
-            break;
-        case 'callAccepted':
-            handleCallAccepted(data.answer);
-            break;
-        case 'callCandidate':
-            handleCallCandidate(data.candidate);
-            break;
-        case 'callRejected':
-            showChatMessage(`📞 ${data.from} отклонил ваш вызов`, "info");
-            endCall();
-            break;
-        case 'error':
-            showChatMessage(data.message, "error");
-            break;
-    }
-}
-
-// Обработка уведомления о звонке
-function handleCallNotification(from, offer) {
-    callFrom = from;
-    isCallIncoming = true;
-
-    let notification = document.getElementById('callNotification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'callNotification';
-        notification.style = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #667eea;
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 300px;
-            font-family: 'Segoe UI', sans-serif;
-        `;
-        document.body.appendChild(notification);
-    }
-
-    notification.innerHTML = `
-        <strong>🔔 ${from} звонит...</strong>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="acceptCall()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: 600;">Принять</button>
-            <button onclick="rejectCall()" style="flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 6px; font-weight: 600;">Отклонить</button>
-        </div>
-    `;
-
-    notification.style.display = 'block';
-
-    // Автоматически скрываем через 30 сек
-    setTimeout(() => {
-        if (isCallIncoming) {
-            notification.style.display = 'none';
-            isCallIncoming = false;
-            callFrom = null;
-            showChatMessage(`📞 Звонок от ${from} истёк`, "info");
-        }
-    }, 30000);
-}
-
-// Принять звонок
-function acceptCall() {
-    if (!isCallIncoming || !callFrom) return;
-
-    callPeerConnection = new RTCPeerConnection({
-        iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" }
-        ]
-    });
-
-    callPeerConnection.ontrack = (event) => {
-        callRemoteStream = event.streams[0];
-        playRemoteAudio();
-    };
-
-    callPeerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-            socket.send(JSON.stringify({
-                type: 'callCandidate',
-                to: callFrom,
-                from: currentUser,
-                candidate: event.candidate
-            }));
-        }
-    };
-
-    callPeerConnection.createAnswer().then(answer => {
-        return callPeerConnection.setLocalDescription(answer);
-    }).then(() => {
-        socket.send(JSON.stringify({
-            type: 'callAnswer',
-            to: callFrom,
-            from: currentUser,
-            answer: callPeerConnection.localDescription
-        }));
-    });
-
-    isCallActive = true;
-    isCallIncoming = false;
-    callFrom = null;
-
-    document.getElementById('callControls').style.display = 'flex';
-    document.getElementById('messageInput').disabled = true;
-    document.querySelector('.message-input-container button').disabled = true;
-
-    document.getElementById('callNotification').style.display = 'none';
-
-    showChatMessage(`📞 Вы приняли звонок от ${callFrom}`, "success");
-}
-
-// Отклонить звонок
-function rejectCall() {
-    if (!isCallIncoming || !callFrom) return;
-
-    socket.send(JSON.stringify({
-        type: 'callRejected',
-        to: callFrom,
-        from: currentUser
-    }));
-
-    isCallIncoming = false;
-    callFrom = null;
-
-    document.getElementById('callNotification').style.display = 'none';
-    showChatMessage(`📞 Вы отклонили звонок от ${callFrom}`, "info");
-}
+let callData = {
+    peerConnection: null,
+    localStream: null,
+    remoteStream: null,
+    isActive: false,
+    isIncoming: false,
+    caller: null,
+    isMicMuted: false,
+    isSpeakerMuted: false
+};
 
 // Начать звонок
 async function startCall() {
@@ -210,41 +18,44 @@ async function startCall() {
         return;
     }
 
-    if (isCallActive) {
+    if (callData.isActive) {
         endCall();
         return;
     }
 
     try {
-        callLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Запрашиваем доступ к микрофону
+        callData.localStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        });
 
-        callPeerConnection = new RTCPeerConnection({
+        // Создаём упрощённое WebRTC соединение
+        callData.peerConnection = new RTCPeerConnection({
             iceServers: [
                 { urls: "stun:stun.l.google.com:19302" },
                 { urls: "stun:stun1.l.google.com:19302" }
             ]
         });
 
-        callLocalStream.getTracks().forEach(track => callPeerConnection.addTrack(track, callLocalStream));
+        // Добавляем локальный поток
+        callData.localStream.getTracks().forEach(track => {
+            callData.peerConnection.addTrack(track, callData.localStream);
+        });
 
-        callPeerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.send(JSON.stringify({
-                    type: 'callCandidate',
-                    to: currentChatWith,
-                    from: currentUser,
-                    candidate: event.candidate
-                }));
-            }
-        };
-
-        callPeerConnection.ontrack = (event) => {
-            callRemoteStream = event.streams[0];
+        // Обработка входящего аудиопотока
+        callData.peerConnection.ontrack = (event) => {
+            callData.remoteStream = event.streams[0];
             playRemoteAudio();
+            showChatMessage("🔊 Соединение установлено", "success");
         };
 
-        const offer = await callPeerConnection.createOffer();
-        await callPeerConnection.setLocalDescription(offer);
+        // Создаём и отправляем offer
+        const offer = await callData.peerConnection.createOffer();
+        await callData.peerConnection.setLocalDescription(offer);
 
         socket.send(JSON.stringify({
             type: 'callOffer',
@@ -253,57 +64,129 @@ async function startCall() {
             offer: offer
         }));
 
-        isCallActive = true;
-        document.getElementById('callControls').style.display = 'flex';
-        document.getElementById('messageInput').disabled = true;
-        document.querySelector('.message-input-container button').disabled = true;
+        // Активируем интерфейс звонка
+        callData.isActive = true;
+        showCallInterface();
+        showChatMessage(`📞 Вызываю ${currentChatWith}...`, "info");
 
-        showChatMessage(`📞 Вызов ${currentChatWith}...`, "info");
-
-    } catch (err) {
-        console.error("Ошибка доступа к микрофону:", err);
-        showChatMessage("Не удалось получить доступ к микрофону", "error");
+    } catch (error) {
+        console.error("Ошибка звонка:", error);
+        showChatMessage("Ошибка при запуске звонка", "error");
     }
 }
 
-// Принять ответ на звонок
-function handleCallAccepted(answer) {
-    if (!callPeerConnection) return;
-
-    callPeerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    showChatMessage("📞 Звонок установлен!", "success");
+// Показать интерфейс звонка
+function showCallInterface() {
+    document.getElementById('callControls').style.display = 'flex';
+    document.getElementById('messageInput').disabled = true;
+    document.querySelector('.message-input-container button').disabled = true;
 }
 
-// Обработать ICE-кандидата
-function handleCallCandidate(candidate) {
-    if (!callPeerConnection) return;
+// Принять входящий звонок
+async function acceptCall() {
+    if (!callData.isIncoming || !callData.caller) return;
 
-    callPeerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    try {
+        callData.localStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        });
+
+        callData.peerConnection = new RTCPeerConnection({
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" }
+            ]
+        });
+
+        // Добавляем локальный поток
+        callData.localStream.getTracks().forEach(track => {
+            callData.peerConnection.addTrack(track, callData.localStream);
+        });
+
+        callData.peerConnection.ontrack = (event) => {
+            callData.remoteStream = event.streams[0];
+            playRemoteAudio();
+            showChatMessage("🔊 Соединение установлено", "success");
+        };
+
+        // Устанавливаем удалённое описание (offer от звонящего)
+        await callData.peerConnection.setRemoteDescription(
+            new RTCSessionDescription(callData.pendingOffer)
+        );
+
+        // Создаём и отправляем answer
+        const answer = await callData.peerConnection.createAnswer();
+        await callData.peerConnection.setLocalDescription(answer);
+
+        socket.send(JSON.stringify({
+            type: 'callAnswer',
+            to: callData.caller,
+            from: currentUser,
+            answer: answer
+        }));
+
+        callData.isActive = true;
+        callData.isIncoming = false;
+        showCallInterface();
+        
+        document.getElementById('callNotification').style.display = 'none';
+        showChatMessage(`📞 Разговор с ${callData.caller}`, "success");
+
+    } catch (error) {
+        console.error("Ошибка принятия звонка:", error);
+        showChatMessage("Ошибка при принятии звонка", "error");
+    }
+}
+
+// Отклонить звонок
+function rejectCall() {
+    if (!callData.isIncoming || !callData.caller) return;
+
+    socket.send(JSON.stringify({
+        type: 'callRejected',
+        to: callData.caller,
+        from: currentUser
+    }));
+
+    callData.isIncoming = false;
+    callData.caller = null;
+    
+    document.getElementById('callNotification').style.display = 'none';
+    showChatMessage(`📞 Вы отклонили звонок`, "info");
 }
 
 // Завершить звонок
 function endCall() {
-    if (!isCallActive) return;
+    if (!callData.isActive) return;
 
-    if (callPeerConnection) {
-        callPeerConnection.close();
-        callPeerConnection = null;
+    // Останавливаем все потоки
+    if (callData.localStream) {
+        callData.localStream.getTracks().forEach(track => track.stop());
+    }
+    if (callData.remoteStream) {
+        callData.remoteStream.getTracks().forEach(track => track.stop());
+    }
+    if (callData.peerConnection) {
+        callData.peerConnection.close();
     }
 
-    if (callLocalStream) {
-        callLocalStream.getTracks().forEach(track => track.stop());
-        callLocalStream = null;
-    }
+    // Сбрасываем состояние
+    callData = {
+        peerConnection: null,
+        localStream: null,
+        remoteStream: null,
+        isActive: false,
+        isIncoming: false,
+        caller: null,
+        isMicMuted: false,
+        isSpeakerMuted: false
+    };
 
-    if (callRemoteStream) {
-        callRemoteStream.getTracks().forEach(track => track.stop());
-        callRemoteStream = null;
-    }
-
-    isCallActive = false;
-    isCallIncoming = false;
-    callFrom = null;
-
+    // Скрываем интерфейс звонка
     document.getElementById('callControls').style.display = 'none';
     document.getElementById('messageInput').disabled = false;
     document.querySelector('.message-input-container button').disabled = false;
@@ -311,338 +194,91 @@ function endCall() {
     showChatMessage("📞 Звонок завершён", "success");
 }
 
-// Выключить микрофон
+// Управление микрофоном
 function toggleMic() {
-    if (!isCallActive) return;
-    isMicMuted = !isMicMuted;
+    if (!callData.isActive) return;
+    callData.isMicMuted = !callData.isMicMuted;
 
-    if (callLocalStream) {
-        callLocalStream.getAudioTracks().forEach(track => {
-            track.enabled = !isMicMuted;
+    if (callData.localStream) {
+        callData.localStream.getAudioTracks().forEach(track => {
+            track.enabled = !callData.isMicMuted;
         });
     }
 
     const btn = document.getElementById('muteMicBtn');
     btn.classList.toggle('muted');
-    btn.title = isMicMuted ? "Включить микрофон" : "Выключить микрофон";
-    btn.textContent = isMicMuted ? "🎙️" : "🔇";
+    btn.textContent = callData.isMicMuted ? "🎙️" : "🔇";
 }
 
-// Отключить звук собеседника
+// Управление звуком
 function toggleSpeaker() {
-    if (!isCallActive) return;
-    isSpeakerMuted = !isSpeakerMuted;
+    if (!callData.isActive) return;
+    callData.isSpeakerMuted = !callData.isSpeakerMuted;
 
     const btn = document.getElementById('muteSpeakerBtn');
     btn.classList.toggle('speaker-muted');
-    btn.title = isSpeakerMuted ? "Включить звук собеседника" : "Отключить звук собеседника";
-    btn.textContent = isSpeakerMuted ? "🔊" : "🔇";
+    btn.textContent = callData.isSpeakerMuted ? "🔊" : "🔇";
 }
 
 // Воспроизведение звука собеседника
 function playRemoteAudio() {
-    if (!callRemoteStream || isSpeakerMuted) return;
+    if (!callData.remoteStream || callData.isSpeakerMuted) return;
 
-    const audio = document.createElement('audio');
-    audio.srcObject = callRemoteStream;
+    const audio = new Audio();
+    audio.srcObject = callData.remoteStream;
     audio.autoplay = true;
-    audio.muted = false;
-    audio.play().catch(e => console.log("Ошибка воспроизведения звука:", e));
+    audio.play().catch(e => console.log("Аудио воспроизведение:", e));
 }
 
-// Звук уведомления
-function playNotificationSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(frequency, duration) {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'sine';
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + duration);
-    }
-    playBeep(800, 0.1);
-    setTimeout(() => playBeep(600, 0.1), 150);
+// Обработка входящего звонка
+function handleCallNotification(from, offer) {
+    callData.caller = from;
+    callData.pendingOffer = offer;
+    callData.isIncoming = true;
+
+    showCallNotification(from);
 }
 
-// Отправка сообщения
-function sendMessage() {
-    if (!currentChatWith) return;
-
-    const messageInput = document.getElementById('messageInput');
-    const text = messageInput.value.trim();
-
-    if (!text) return;
-
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        const messageData = {
-            type: 'message',
-            to: currentChatWith,
-            text: text,
-            timestamp: new Date().toISOString()
-        };
-
-        socket.send(JSON.stringify(messageData));
-        addMessageToHistory(currentUser, text, 'sent', new Date().toISOString());
-        messageInput.value = '';
-        scrollToBottom();
-    }
-}
-
-// Получение сообщения
-function receiveMessage(from, text, timestamp) {
-    if (!messages[from]) messages[from] = [];
-    messages[from].push({ text, timestamp, type: 'received' });
-
-    if (from === currentChatWith) {
-        addMessageToHistory(from, text, 'received', timestamp);
-        playNotificationSound();
+// Показать уведомление о звонке
+function showCallNotification(from) {
+    let notification = document.getElementById('callNotification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'callNotification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #667eea;
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+            min-width: 300px;
+        `;
+        document.body.appendChild(notification);
     }
 
-    saveChatHistory();
-}
-
-// Добавление сообщения в историю
-function addMessageToHistory(author, text, messageType, timestamp) {
-    if (!messages[author]) messages[author] = [];
-    messages[author].push({ text, timestamp, type: messageType });
-    saveChatHistory();
-
-    if (author === currentChatWith || (author === currentUser && messageType === 'sent')) {
-        displayMessage(author, text, messageType, timestamp);
-    }
-}
-
-// Отображение сообщения
-function displayMessage(author, text, messageType, timestamp) {
-    const messagesContainer = document.getElementById('messagesContainer');
-    const welcomeMessage = messagesContainer.querySelector('.welcome-message');
-    if (welcomeMessage) welcomeMessage.remove();
-
-    const messageElement = document.createElement('div');
-    const time = new Date(timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-    messageElement.className = `message ${messageType}`;
-    messageElement.innerHTML = `
-        <div class="message-text">${text}</div>
-        <div class="message-time">${time}</div>
-    `;
-
-    messagesContainer.appendChild(messageElement);
-    scrollToBottom();
-}
-
-// Загрузка истории чата
-function loadChatHistory() {
-    const savedData = localStorage.getItem('chatHistory');
-    if (savedData) {
-        const data = JSON.parse(savedData);
-        messages = data.messages || {};
-        activeChats = new Set(data.activeChats || []);
-        renderActiveChats();
-    }
-}
-
-// Сохранение истории чата
-function saveChatHistory() {
-    const chatData = {
-        messages: messages,
-        activeChats: Array.from(activeChats)
-    };
-    localStorage.setItem('chatHistory', JSON.stringify(chatData));
-}
-
-// Поиск пользователя
-async function searchUser() {
-    const searchInput = document.getElementById('userSearch');
-    const username = searchInput.value.trim();
-
-    if (!username) {
-        showChatMessage('Введите никнейм для поиска', 'error');
-        return;
-    }
-
-    if (username === currentUser) {
-        showChatMessage('Нельзя писать самому себе', 'error');
-        return;
-    }
-
-    try {
-        const response = await fetch('/search-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, searcher: currentUser })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            displaySearchResult(data.user);
-        } else {
-            showChatMessage(data.message, 'error');
-        }
-    } catch (error) {
-        showChatMessage('Ошибка поиска пользователя', 'error');
-    }
-}
-
-// Отображение результата поиска
-function displaySearchResult(user) {
-    const searchResults = document.getElementById('searchResults');
-    if (!user) {
-        searchResults.innerHTML = '<div class="search-result-item">Пользователь не найден</div>';
-        return;
-    }
-
-    searchResults.innerHTML = `
-        <div class="search-result-item" onclick="startChatWith('${user.username}')">
-            <div class="search-result-avatar">${user.username.charAt(0).toUpperCase()}</div>
-            <div>
-                <div class="chat-item-name">${user.username}</div>
-                <div class="chat-item-status">${user.online ? 'online' : 'offline'}</div>
-            </div>
-            <button class="start-chat-btn">💬</button>
+    notification.innerHTML = `
+        <div style="font-size: 2em; margin-bottom: 10px;">📞</div>
+        <h3>${from} звонит вам</h3>
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button onclick="acceptCall()" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 10px; font-size: 16px;">
+                Принять
+            </button>
+            <button onclick="rejectCall()" style="flex: 1; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 10px; font-size: 16px;">
+                Отклонить
+            </button>
         </div>
     `;
-}
 
-// Начать чат с пользователем
-function startChatWith(username) {
-    if (username === currentUser) return;
-
-    currentChatWith = username;
-    activeChats.add(username);
-    updateChatHeader();
-    loadChatHistory();
-    enableMessageInput();
-    renderActiveChats();
-
-    document.getElementById('searchResults').innerHTML = '';
-    document.getElementById('userSearch').value = '';
-}
-
-// Обновление заголовка чата
-function updateChatHeader() {
-    const chatWithName = document.getElementById('chatWithName');
-    const chatWithInfo = document.getElementById('chatWithInfo');
-
-    if (currentChatWith) {
-        chatWithName.textContent = currentChatWith;
-        chatWithInfo.innerHTML = `
-            <div class="chat-avatar">${currentChatWith.charAt(0).toUpperCase()}</div>
-            <div>
-                <div class="user-name">${currentChatWith}</div>
-                <div class="chat-status">${isCallActive ? 'в звонке' : 'online'}</div>
-            </div>
-        `;
-    } else {
-        chatWithName.textContent = 'Выберите собеседника';
-        chatWithInfo.innerHTML = '<div class="chat-avatar">👥</div>';
-    }
-}
-
-// Включение поля ввода сообщения
-function enableMessageInput() {
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.querySelector('.message-input-container button');
-    messageInput.disabled = false;
-    sendButton.disabled = false;
-    messageInput.focus();
-}
-
-// Отображение активных чатов
-function renderActiveChats() {
-    const activeChatsContainer = document.getElementById('activeChats');
-    activeChatsContainer.innerHTML = '';
-
-    activeChats.forEach(username => {
-        if (username === currentUser) return;
-
-        const chatItem = document.createElement('div');
-        chatItem.className = `chat-item ${currentChatWith === username ? 'active' : ''}`;
-        chatItem.onclick = () => selectChat(username);
-
-        const lastMessage = messages[username] ? messages[username][messages[username].length - 1] : null;
-
-        chatItem.innerHTML = `
-            <div class="chat-item-avatar">${username.charAt(0).toUpperCase()}</div>
-            <div class="chat-item-info">
-                <div class="chat-item-name">${username}</div>
-                <div class="chat-item-status">${lastMessage ? lastMessage.text.substring(0, 20) + '...' : 'Нет сообщений'}</div>
-            </div>
-        `;
-
-        activeChatsContainer.appendChild(chatItem);
-    });
-}
-
-// Выбор чата
-function selectChat(username) {
-    currentChatWith = username;
-    updateChatHeader();
-    loadChatHistory();
-    enableMessageInput();
-    renderActiveChats();
-}
-
-// Прокрутка к последнему сообщению
-function scrollToBottom() {
-    const messagesContainer = document.getElementById('messagesContainer');
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// Показать сообщение в чате
-function showChatMessage(message, type) {
-    const messagesContainer = document.getElementById('messagesContainer');
-    const messageElement = document.createElement('div');
-    messageElement.className = `system-message ${type}`;
-    messageElement.textContent = message;
-    messageElement.style.color = type === 'error' ? '#dc3545' : '#28a745';
-    messageElement.style.padding = '10px';
-    messageElement.style.margin = '10px 0';
-    messageElement.style.borderRadius = '6px';
-    messageElement.style.backgroundColor = type === 'error' ? '#f8d7da' : '#d4edda';
-
-    messagesContainer.appendChild(messageElement);
-    scrollToBottom();
-
-    setTimeout(() => messageElement.remove(), 3000);
-}
-
-// Настройка обработчиков событий
-function setupChatEvents() {
-    const messageInput = document.getElementById('messageInput');
-    const userSearch = document.getElementById('userSearch');
-
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') sendMessage();
-    });
-
-    userSearch.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') searchUser();
-    });
-
-    // Добавляем кнопку звонка в заголовок чата
-    const chatHeader = document.querySelector('.chat-header');
-    const callBtn = document.createElement('button');
-    callBtn.innerHTML = '📞';
-    callBtn.className = 'call-button';
-    callBtn.style = `
-        background: none;
-        border: none;
-        font-size: 1.8em;
-        cursor: pointer;
-        margin-left: 10px;
-        color: #667eea;
-    `;
-    callBtn.title = "Начать аудиозвонок";
-    callBtn.onclick = startCall;
-
-    chatHeader.appendChild(callBtn);
-
-    loadChatHistory();
+    // Автоотклонение через 30 секунд
+    setTimeout(() => {
+        if (callData.isIncoming) {
+            rejectCall();
+        }
+    }, 30000);
 }
