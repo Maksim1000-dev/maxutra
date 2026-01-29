@@ -25,9 +25,9 @@
                 </div>
                 
                 <div class="auth-buttons">
+                    <button id="startBtn" onclick="checkUsername()">Продолжить</button>
                     <button id="loginBtn" onclick="handleAuth()" style="display: none;">Войти</button>
                     <button id="registerBtn" onclick="handleAuth()" style="display: none;">Зарегистрироваться</button>
-                    <button id="startBtn" onclick="checkUsername()">Продолжить</button>
                 </div>
                 
                 <div id="authMessage" class="auth-message"></div>
@@ -38,7 +38,6 @@
     <!-- Экран чата -->
     <div id="chatScreen" class="screen">
         <div class="chat-container">
-            <!-- Боковая панель -->
             <div class="sidebar">
                 <div class="sidebar-header">
                     <h3>👥 Поиск пользователей</h3>
@@ -61,7 +60,6 @@
                 </div>
             </div>
 
-            <!-- Основная область чата -->
             <div class="chat-area">
                 <div class="chat-header">
                     <div id="chatWithInfo">
@@ -72,7 +70,15 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- Зона для перетаскивания файлов -->
+                <div id="dropZone" class="drop-zone" style="display: none;">
+                    <div class="drop-content">
+                        <h3>📦 Перетащите файлы сюда</h3>
+                        <p>Максимум 300 МБ</p>
+                    </div>
+                </div>
+
                 <div id="messagesContainer" class="messages-container">
                     <div class="welcome-message">
                         <h3>💬 Добро пожаловать в Maxutra!</h3>
@@ -85,7 +91,6 @@
                     <button onclick="sendMessage()" disabled>📤</button>
                 </div>
 
-                <!-- Панель звонка -->
                 <div id="callControls" class="call-controls" style="display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center; gap: 10px; display: flex; justify-content: center; align-items: center;">
                     <button id="muteMicBtn" class="call-btn" onclick="toggleMic()" title="Выключить микрофон">🎙️</button>
                     <button id="muteSpeakerBtn" class="call-btn" onclick="toggleSpeaker()" title="Отключить звук собеседника">🔊</button>
@@ -95,8 +100,7 @@
         </div>
     </div>
 
-<script src="script.js"></script>
-<script src="chat.js"></script>
+    <script src="script.js"></script>
+    <script src="chat.js"></script>
 </body>
 </html>
-
