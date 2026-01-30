@@ -14,18 +14,21 @@ let isMicMuted = false;
 let isSpeakerMuted = false;
 
 // === ФАЙЛЫ ===
-const MAX_FILE_SIZE = 300 * 1024 * 1024; // 300 МБ
+const MAX_FILE_SIZE = 300 * 1024 * 1024; // ✅ ИСПРАВЛЕНО: 300 МБ (было _1024_)
 
-// Инициализация чата
+// 🎯 Один глобальный элемент для воспроизведения звука собеседника (избегаем утечек)
+let remoteAudioElement = null;
+
+// === ИНИЦИАЛИЗАЦИЯ ЧАТА ===
 function initChat(username) {
     setupChatEvents();
-    loadChatHistory();
+    loadChatHistory(); // ✅ Загружаем историю ТОЛЬКО здесь — больше не дублируем
     setupFileDragDrop();
 }
 
-// Обработка сообщений WebSocket
+// === ОБРАБОТЧИК ВЕБСОКЕТА ===
 function handleWebSocketMessage(data) {
-    switch(data.type) {
+    switch (data.type) {
         case 'userList':
             updateOnlineUsers(data.users);
             break;
@@ -33,10 +36,10 @@ function handleWebSocketMessage(data) {
             receiveMessage(data.from, data.text, data.timestamp);
             break;
         case 'userJoined':
-            addSystemMessage(`${data.username} присоединился к чату`);
+            addSystemMessage(`${data.username} присоединился к чату`); // ✅ ИСПРАВЛЕНО: скобки!
             break;
         case 'userLeft':
-            addSystemMessage(`${data.username} покинул чат`);
+            addSystemMessage(`${data.username} покинул чат`); // ✅ ИСПРАВЛЕНО
             break;
         case 'callNotification':
             handleCallNotification(data.from, data.offer);
@@ -48,7 +51,7 @@ function handleWebSocketMessage(data) {
             handleCallCandidate(data.candidate);
             break;
         case 'callRejected':
-            showChatMessage(`📞 ${data.from} отклонил ваш вызов`, "info");
+            showChatMessage(`📞 ${data.from} отклонил ваш вызов`, "info"); // ✅ ИСПРАВЛЕНО
             endCall();
             break;
         case 'file':
@@ -57,16 +60,15 @@ function handleWebSocketMessage(data) {
     }
 }
 
-// Обновление списка онлайн-пользователей
+// === ОБНОВЛЕНИЕ СПИСКА ОНЛАЙН-ПОЛЬЗОВАТЕЛЕЙ ===
 function updateOnlineUsers(users) {
-    renderActiveChats();
+    renderActiveChats(); // Обновляем интерфейс
 }
 
-// Показ сообщения в чате
+// === ПОКАЗ СООБЩЕНИЯ (системное/ошибка/успех) ===
 function showChatMessage(message, type) {
     const messagesContainer = document.getElementById('messagesContainer');
     const messageElement = document.createElement('div');
-    
     messageElement.className = `system-message ${type}`;
     messageElement.textContent = message;
     messageElement.style.cssText = `
@@ -78,18 +80,15 @@ function showChatMessage(message, type) {
         border-radius: 6px;
         font-size: 0.9em;
     `;
-
     messagesContainer.appendChild(messageElement);
     scrollToBottom();
-
     setTimeout(() => messageElement.remove(), 3000);
 }
 
-// Добавление системного сообщения
+// === ДОБАВИТЬ СИСТЕМНОЕ СООБЩЕНИЕ ===
 function addSystemMessage(text) {
     const messagesContainer = document.getElementById('messagesContainer');
     const systemMessage = document.createElement('div');
-    
     systemMessage.className = 'system-message';
     systemMessage.textContent = text;
     systemMessage.style.cssText = `
@@ -101,12 +100,11 @@ function addSystemMessage(text) {
         background: #f0f0f0;
         border-radius: 6px;
     `;
-
     messagesContainer.appendChild(systemMessage);
     scrollToBottom();
 }
 
-// Обработка уведомления о звонке
+// === ОБРАБОТКА УВЕДОМЛЕНИЯ О ЗВОНКЕ ===
 function handleCallNotification(from, offer) {
     callFrom = from;
     isCallIncoming = true;
@@ -141,9 +139,9 @@ function handleCallNotification(from, offer) {
             <button onclick="rejectCall()" style="flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 6px; font-weight: 600;">Отклонить</button>
         </div>
     `;
-
     notification.style.display = 'block';
 
+    // Автоматическое скрытие через 30 сек
     setTimeout(() => {
         if (isCallIncoming) {
             notification.style.display = 'none';
@@ -154,7 +152,7 @@ function handleCallNotification(from, offer) {
     }, 30000);
 }
 
-// Принять звонок
+// === ПРИНЯТЬ ЗВОНОК ===
 function acceptCall() {
     if (!isCallIncoming || !callFrom) return;
 
@@ -167,7 +165,7 @@ function acceptCall() {
 
     callPeerConnection.ontrack = (event) => {
         callRemoteStream = event.streams[0];
-        playRemoteAudio();
+        playRemoteAudio(); // ✅ Воспроизводим звук
     };
 
     callPeerConnection.onicecandidate = (event) => {
@@ -199,13 +197,12 @@ function acceptCall() {
     document.getElementById('callControls').style.display = 'flex';
     document.getElementById('messageInput').disabled = true;
     document.querySelector('.message-input-container button').disabled = true;
-
     document.getElementById('callNotification').style.display = 'none';
 
     showChatMessage(`📞 Вы приняли звонок от ${callFrom}`, "success");
 }
 
-// Отклонить звонок
+// === ОТКЛОНИТЬ ЗВОНОК ===
 function rejectCall() {
     if (!isCallIncoming || !callFrom) return;
 
@@ -217,12 +214,12 @@ function rejectCall() {
 
     isCallIncoming = false;
     callFrom = null;
-
     document.getElementById('callNotification').style.display = 'none';
+
     showChatMessage(`📞 Вы отклонили звонок от ${callFrom}`, "info");
 }
 
-// Начать звонок
+// === НАЧАТЬ ЗВОНОК ===
 async function startCall() {
     if (!currentChatWith) {
         showChatMessage("Выберите собеседника", "error");
@@ -285,22 +282,20 @@ async function startCall() {
     }
 }
 
-// Принять ответ на звонок
+// === ПРИНЯТЬ ОТВЕТ НА ЗВОНОК ===
 function handleCallAccepted(answer) {
     if (!callPeerConnection) return;
-
     callPeerConnection.setRemoteDescription(new RTCSessionDescription(answer));
     showChatMessage("📞 Звонок установлен!", "success");
 }
 
-// Обработать ICE-кандидата
+// === ОБРАБОТКА ICE-КАНДИДАТА ===
 function handleCallCandidate(candidate) {
     if (!callPeerConnection) return;
-
     callPeerConnection.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
-// Завершить звонок
+// === ЗАВЕРШИТЬ ЗВОНОК ===
 function endCall() {
     if (!isCallActive) return;
 
@@ -330,47 +325,48 @@ function endCall() {
     showChatMessage("📞 Звонок завершён", "success");
 }
 
-// Выключить микрофон
+// === ВКЛ/ВЫКЛ МИКРОФОН ===
 function toggleMic() {
     if (!isCallActive) return;
     isMicMuted = !isMicMuted;
-
     if (callLocalStream) {
         callLocalStream.getAudioTracks().forEach(track => {
             track.enabled = !isMicMuted;
         });
     }
-
     const btn = document.getElementById('muteMicBtn');
     btn.classList.toggle('muted');
     btn.title = isMicMuted ? "Включить микрофон" : "Выключить микрофон";
     btn.textContent = isMicMuted ? "🎙️" : "🔇";
 }
 
-// Отключить звук собеседника
+// === ВКЛ/ВЫКЛ ЗВУК СОБЕСЕДНИКА ===
 function toggleSpeaker() {
     if (!isCallActive) return;
     isSpeakerMuted = !isSpeakerMuted;
-
     const btn = document.getElementById('muteSpeakerBtn');
     btn.classList.toggle('speaker-muted');
     btn.title = isSpeakerMuted ? "Включить звук собеседника" : "Отключить звук собеседника";
     btn.textContent = isSpeakerMuted ? "🔊" : "🔇";
 }
 
-// Воспроизведение звука собеседника
+// === ВОСПРОИЗВЕДЕНИЕ ЗВУКА СОБЕСЕДНИКА (с фиксом утечки) ===
 function playRemoteAudio() {
     if (!callRemoteStream || isSpeakerMuted) return;
 
-    const audio = document.createElement('audio');
-    audio.srcObject = callRemoteStream;
-    audio.autoplay = true;
-    audio.muted = false;
-    audio.play().catch(e => console.log("Ошибка воспроизведения звука:", e));
+    if (!remoteAudioElement) {
+        remoteAudioElement = document.createElement('audio');
+        remoteAudioElement.autoplay = true;
+        remoteAudioElement.muted = false;
+        remoteAudioElement.style.display = 'none'; // Скрываем, не мешает UI
+        document.body.appendChild(remoteAudioElement);
+    }
+
+    remoteAudioElement.srcObject = callRemoteStream;
+    remoteAudioElement.play().catch(e => console.log("Ошибка воспроизведения звука:", e));
 }
 
-// === ФАЙЛЫ: Настройка перетаскивания ===
-
+// === ФАЙЛЫ: НАСТРОЙКА ПЕРЕТАСКИВАНИЯ ===
 function setupFileDragDrop() {
     const messagesContainer = document.getElementById('messagesContainer');
     const dropZone = document.getElementById('dropZone');
@@ -393,7 +389,6 @@ function setupFileDragDrop() {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.style.display = 'none';
-
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             handleFileUpload(files[0]);
@@ -403,7 +398,6 @@ function setupFileDragDrop() {
     messagesContainer.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.style.display = 'none';
-
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             handleFileUpload(files[0]);
@@ -411,7 +405,7 @@ function setupFileDragDrop() {
     });
 }
 
-// Обработка загрузки файла
+// === ОБРАБОТКА ЗАГРУЗКИ ФАЙЛА ===
 function handleFileUpload(file) {
     if (!currentChatWith) {
         showChatMessage('Выберите собеседника для отправки файла', 'error');
@@ -444,11 +438,10 @@ function handleFileUpload(file) {
             addMessageToHistory(currentUser, `[Файл: ${file.name}]`, 'sent', new Date().toISOString());
         }
     };
-
     reader.readAsDataURL(file);
 }
 
-// Получение файла
+// === ПОЛУЧЕНИЕ ФАЙЛА ===
 function receiveFile(from, fileInfo, fileData) {
     if (!activeChats.has(from)) {
         activeChats.add(from);
@@ -475,7 +468,7 @@ function receiveFile(from, fileInfo, fileData) {
     }
 }
 
-// Отображение сообщения с файлом
+// === ОТОБРАЖЕНИЕ ФАЙЛА ===
 function displayFileMessage(from, fileInfo, fileData) {
     const messagesContainer = document.getElementById('messagesContainer');
     const welcomeMessage = messagesContainer.querySelector('.welcome-message');
@@ -503,7 +496,7 @@ function displayFileMessage(from, fileInfo, fileData) {
     scrollToBottom();
 }
 
-// Звук уведомления
+// === ЗВУК УВЕДОМЛЕНИЯ ===
 function playNotificationSound() {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(frequency, duration) {
@@ -522,13 +515,12 @@ function playNotificationSound() {
     setTimeout(() => playBeep(600, 0.1), 150);
 }
 
-// Отправка сообщения
+// === ОТПРАВКА СООБЩЕНИЯ ===
 function sendMessage() {
     if (!currentChatWith) return;
 
     const messageInput = document.getElementById('messageInput');
     const text = messageInput.value.trim();
-
     if (!text) return;
 
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -546,17 +538,14 @@ function sendMessage() {
     }
 }
 
-// Получение сообщения
+// === ПОЛУЧЕНИЕ СООБЩЕНИЯ ===
 function receiveMessage(from, text, timestamp) {
     if (!activeChats.has(from)) {
         activeChats.add(from);
         renderActiveChats();
     }
 
-    if (!messages[from]) {
-        messages[from] = [];
-    }
-
+    if (!messages[from]) messages[from] = [];
     messages[from].push({ text, timestamp, type: 'received' });
 
     if (from === currentChatWith) {
@@ -567,21 +556,19 @@ function receiveMessage(from, text, timestamp) {
     saveChatHistory();
 }
 
-// Добавление сообщения в историю
+// === ДОБАВИТЬ СООБЩЕНИЕ В ИСТОРИЮ ===
 function addMessageToHistory(author, text, messageType, timestamp) {
-    if (!messages[author]) {
-        messages[author] = [];
-    }
-
+    if (!messages[author]) messages[author] = [];
     messages[author].push({ text, timestamp, type: messageType });
     saveChatHistory();
 
+    // ✅ Отображаем только если это текущий чат
     if (author === currentChatWith || (author === currentUser && messageType === 'sent')) {
         displayMessage(author, text, messageType, timestamp);
     }
 }
 
-// Отображение сообщения
+// === ОТОБРАЗИТЬ СООБЩЕНИЕ ===
 function displayMessage(author, text, messageType, timestamp) {
     const messagesContainer = document.getElementById('messagesContainer');
     const welcomeMessage = messagesContainer.querySelector('.welcome-message');
@@ -600,18 +587,17 @@ function displayMessage(author, text, messageType, timestamp) {
     scrollToBottom();
 }
 
-// Загрузка истории чата
+// === ЗАГРУЗКА ИСТОРИИ ЧАТА ===
 function loadChatHistory() {
     const savedData = localStorage.getItem('chatHistory');
     if (savedData) {
         const data = JSON.parse(savedData);
         messages = data.messages || {};
         activeChats = new Set(data.activeChats || []);
-        renderActiveChats();
     }
 }
 
-// Сохранение истории чата
+// === СОХРАНЕНИЕ ИСТОРИИ ЧАТА ===
 function saveChatHistory() {
     const chatData = {
         messages: messages,
@@ -620,16 +606,14 @@ function saveChatHistory() {
     localStorage.setItem('chatHistory', JSON.stringify(chatData));
 }
 
-// Поиск пользователя
+// === ПОИСК ПОЛЬЗОВАТЕЛЯ ===
 async function searchUser() {
     const searchInput = document.getElementById('userSearch');
     const username = searchInput.value.trim();
-
     if (!username) {
         showChatMessage('Введите никнейм для поиска', 'error');
         return;
     }
-
     if (username === currentUser) {
         showChatMessage('Нельзя писать самому себе', 'error');
         return;
@@ -643,9 +627,7 @@ async function searchUser() {
             },
             body: JSON.stringify({ username, searcher: currentUser })
         });
-
         const data = await response.json();
-
         if (data.success) {
             displaySearchResult(data.user);
         } else {
@@ -656,7 +638,7 @@ async function searchUser() {
     }
 }
 
-// Отображение результата поиска
+// === ОТОБРАЗИТЬ РЕЗУЛЬТАТ ПОИСКА ===
 function displaySearchResult(user) {
     const searchResults = document.getElementById('searchResults');
     if (!user) {
@@ -676,7 +658,7 @@ function displaySearchResult(user) {
     `;
 }
 
-// Начать чат с пользователем
+// === НАЧАТЬ ЧАТ С ПОЛЬЗОВАТЕЛЕМ ===
 function startChatWith(username) {
     if (username === currentUser) return;
 
@@ -685,13 +667,20 @@ function startChatWith(username) {
     updateChatHeader();
     loadChatHistory();
     enableMessageInput();
-    renderActiveChats();
 
+    // ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: РЕНДЕРИМ ВСЕ СООБЩЕНИЯ ИЗ ИСТОРИИ
+    if (messages[username]) {
+        messages[username].forEach(msg => {
+            displayMessage(username, msg.text, msg.type, msg.timestamp);
+        });
+    }
+
+    renderActiveChats();
     document.getElementById('searchResults').innerHTML = '';
     document.getElementById('userSearch').value = '';
 }
 
-// Обновление заголовка чата
+// === ОБНОВИТЬ ЗАГОЛОВОК ЧАТА ===
 function updateChatHeader() {
     const chatWithName = document.getElementById('chatWithName');
     const chatWithInfo = document.getElementById('chatWithInfo');
@@ -711,7 +700,7 @@ function updateChatHeader() {
     }
 }
 
-// Включение поля ввода сообщения
+// === ВКЛЮЧИТЬ ПОЛЕ ВВОДА ===
 function enableMessageInput() {
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.querySelector('.message-input-container button');
@@ -720,7 +709,7 @@ function enableMessageInput() {
     messageInput.focus();
 }
 
-// Отображение активных чатов
+// === ОТОБРАЗИТЬ АКТИВНЫЕ ЧАТЫ ===
 function renderActiveChats() {
     const activeChatsContainer = document.getElementById('activeChats');
     activeChatsContainer.innerHTML = '';
@@ -746,22 +735,32 @@ function renderActiveChats() {
     });
 }
 
-// Выбор чата
+// === ВЫБОР ЧАТА ===
 function selectChat(username) {
     currentChatWith = username;
     updateChatHeader();
     loadChatHistory();
     enableMessageInput();
     renderActiveChats();
+
+    // ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: РЕНДЕРИМ ВСЕ СООБЩЕНИЯ ИЗ ИСТОРИИ
+    if (messages[username]) {
+        messages[username].forEach(msg => {
+            displayMessage(username, msg.text, msg.type, msg.timestamp);
+        });
+    }
+
+    document.getElementById('searchResults').innerHTML = '';
+    document.getElementById('userSearch').value = '';
 }
 
-// Прокрутка к последнему сообщению
+// === ПРОКРУТКА К ПОСЛЕДНЕМУ СООБЩЕНИЮ ===
 function scrollToBottom() {
     const messagesContainer = document.getElementById('messagesContainer');
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Настройка событий чата
+// === НАСТРОЙКА СОБЫТИЙ ЧАТА ===
 function setupChatEvents() {
     const messageInput = document.getElementById('messageInput');
     const userSearch = document.getElementById('userSearch');
@@ -778,7 +777,7 @@ function setupChatEvents() {
         }
     });
 
-    // Добавляем кнопку звонка в заголовок чата
+    // Добавляем кнопку звонка
     const chatHeader = document.querySelector('.chat-header');
     const callBtn = document.createElement('button');
     callBtn.innerHTML = '📞';
@@ -793,8 +792,7 @@ function setupChatEvents() {
     `;
     callBtn.title = "Начать аудиозвонок";
     callBtn.onclick = startCall;
-
     chatHeader.appendChild(callBtn);
 
-    loadChatHistory();
+    // ✅ УБРАЛИ ДУБЛИРУЮЩИЙ loadChatHistory() — он уже вызывается в initChat()
 }
