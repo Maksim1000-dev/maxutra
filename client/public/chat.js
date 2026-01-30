@@ -1,12 +1,12 @@
 // chat.js — Логика чата: сообщения, файлы, поиск, история, UI
 
-// Глобальные переменные чата (используются из script.js: socket, currentUser)
+// Глобальные переменные (используются из script.js: socket, currentUser)
 let currentChatWith = null;
 let messages = {};
 let activeChats = new Set();
 
 // === ИНИЦИАЛИЗАЦИЯ ЧАТА ===
-export function initChat(username) {
+function initChat(username) {
     currentUser = username; // Устанавливаем текущего пользователя
     setupChatEvents();
     loadChatHistory();
@@ -205,7 +205,7 @@ function handleFileDrop(e) {
 }
 
 // === ПОИСК ПОЛЬЗОВАТЕЛЯ ===
-async function searchUser() {
+function searchUser() {
     const searchInput = document.getElementById('userSearch');
     const username = searchInput.value.trim();
 
@@ -220,19 +220,22 @@ async function searchUser() {
     }
 
     try {
-        const response = await fetch('/search-user', {
+        fetch('/search-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, searcher: currentUser })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                displaySearchResult(data.user);
+            } else {
+                showChatMessage(data.message, 'error');
+            }
+        })
+        .catch(() => {
+            showChatMessage('Ошибка поиска пользователя', 'error');
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-            displaySearchResult(data.user);
-        } else {
-            showChatMessage(data.message, 'error');
-        }
     } catch (error) {
         showChatMessage('Ошибка поиска пользователя', 'error');
     }
@@ -465,7 +468,7 @@ function setupChatEvents() {
         });
     }
 
-    // Добавляем кнопку звонка (будет обработана в call.js)
+    // Добавляем кнопку звонка (определяется в call.js)
     const chatHeader = document.querySelector('.chat-header');
     if (chatHeader) {
         const callBtn = document.createElement('button');
