@@ -17,9 +17,17 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client/public')));
 
+// ✅ ОБЯЗАТЕЛЬНО: Health Check для Render.com
+app.get('/healthz', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'Maxutra',
+    timestamp: new Date().toISOString()
+  });
+});
+
 const USERS_FILE = path.join(__dirname, 'users.json');
 
-// Загружаем пользователей
 function loadUsers() {
   try {
     const data = fs.readFileSync(USERS_FILE, 'utf8');
@@ -30,12 +38,10 @@ function loadUsers() {
   }
 }
 
-// Сохраняем пользователей
 function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
-// Регистрация
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Заполните все поля' });
@@ -52,7 +58,6 @@ app.post('/register', (req, res) => {
   res.json({ success: true, username });
 });
 
-// Логин
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Заполните все поля' });
@@ -66,13 +71,11 @@ app.post('/login', (req, res) => {
   res.json({ success: true, username });
 });
 
-// Получить всех пользователей (для поиска)
 app.get('/users', (req, res) => {
   const users = loadUsers();
   res.json(Object.keys(users));
 });
 
-// Socket.IO
 io.on('connection', (socket) => {
   let username = null;
 
@@ -95,12 +98,10 @@ io.on('connection', (socket) => {
     };
 
     if (!receiver) {
-      // Глобальный чат
       io.emit('receiveMessage', message);
     } else {
-      // Личное сообщение
       io.to(receiver).emit('receiveMessage', message);
-      socket.emit('receiveMessage', message); // чтобы отправитель увидел своё сообщение
+      socket.emit('receiveMessage', message);
     }
   });
 
@@ -111,7 +112,8 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+// ✅ ВАЖНО: Render.com ожидает порт 10000
+const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
+  console.log(`🚀 Сервер запущен на порту ${PORT}`);
 });
