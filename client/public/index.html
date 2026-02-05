@@ -1,108 +1,40 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maxutra Messenger</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maxutra — Простой мессенджер</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Экран авторизации -->
-    <div id="authScreen" class="screen active">
-        <div class="auth-container">
-            <div class="logo">
-                <h1>💬 Maxutra</h1>
-                <p>Безопасный мессенджер с паролями</p>
-            </div>
-            
-            <div class="auth-form">
-                <div class="input-group">
-                    <input type="text" id="usernameInput" placeholder="Введите ваш никнейм" maxlength="20">
-                    <div id="passwordGroup" class="password-group" style="display: none;">
-                        <input type="password" id="passwordInput" placeholder="Введите пароль">
-                        <input type="password" id="confirmPasswordInput" placeholder="Повторите пароль" style="display: none;">
-                    </div>
-                </div>
-                
-                <div class="auth-buttons">
-                    <button id="startBtn" onclick="checkUsername()">Продолжить</button>
-                    <button id="loginBtn" onclick="handleAuth()" style="display: none;">Войти</button>
-                    <button id="registerBtn" onclick="handleAuth()" style="display: none;">Зарегистрироваться</button>
-                </div>
-                
-                <div id="authMessage" class="auth-message"></div>
-            </div>
-        </div>
+  <div id="auth" class="screen active">
+    <h1>💬 Maxutra</h1>
+    <input type="text" id="username" placeholder="Никнейм" maxlength="20">
+    <input type="password" id="password" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
+    <button onclick="register()">Зарегистрироваться</button>
+    <p id="message" style="color: red; margin-top: 10px;"></p>
+  </div>
+
+  <div id="chat" class="screen">
+    <h1>💬 Maxutra — Чат</h1>
+    <div id="usersList">
+      <h3>Пользователи</h3>
+      <input type="text" id="search" placeholder="Найти пользователя..." oninput="searchUsers()">
+      <ul id="users"></ul>
     </div>
 
-    <!-- Экран чата -->
-    <div id="chatScreen" class="screen">
-        <div class="chat-container">
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <h3>👥 Поиск пользователей</h3>
-                    <div class="user-info">
-                        <span id="currentUserName"></span>
-                        <button onclick="logout()" class="logout-btn">🚪</button>
-                    </div>
-                </div>
-                
-                <div class="search-container">
-                    <input type="text" id="userSearch" placeholder="Введите никнейм для поиска...">
-                    <button onclick="searchUser()">🔍 Найти</button>
-                </div>
-                
-                <div id="searchResults" class="search-results"></div>
-                
-                <div id="chatsList" class="chats-list">
-                    <h4>💬 Активные чаты</h4>
-                    <div id="activeChats"></div>
-                </div>
-            </div>
-
-            <div class="chat-area">
-                <div class="chat-header">
-                    <div id="chatWithInfo">
-                        <div class="chat-avatar">👤</div>
-                        <div>
-                            <div id="chatWithName">Выберите собеседника</div>
-                            <div class="chat-status">offline</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Зона для перетаскивания файлов -->
-                <div id="dropZone" class="drop-zone" style="display: none;">
-                    <div class="drop-content">
-                        <h3>📦 Перетащите файлы сюда</h3>
-                        <p>Максимум 300 МБ</p>
-                    </div>
-                </div>
-
-                <div id="messagesContainer" class="messages-container">
-                    <div class="welcome-message">
-                        <h3>💬 Добро пожаловать в Maxutra!</h3>
-                        <p>Найдите пользователя по никнейму чтобы начать общение</p>
-                    </div>
-                </div>
-                
-                <div class="message-input-container">
-                    <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
-                    <button onclick="sendMessage()" disabled>📤</button>
-                </div>
-
-                <div id="callControls" class="call-controls" style="display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center; gap: 10px; display: flex; justify-content: center; align-items: center;">
-                    <button id="muteMicBtn" class="call-btn" onclick="toggleMic()" title="Выключить микрофон">🎙️</button>
-                    <button id="muteSpeakerBtn" class="call-btn" onclick="toggleSpeaker()" title="Отключить звук собеседника">🔊</button>
-                    <button id="endCallBtn" class="call-btn end-call" onclick="endCall()" title="Повесить трубку">📞</button>
-                </div>
-            </div>
-        </div>
+    <div id="chatWindow">
+      <div id="messages"></div>
+      <div class="input">
+        <input type="text" id="messageInput" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">Отправить</button>
+      </div>
+      <button onclick="logout()">Выйти</button>
     </div>
+  </div>
 
-    <script src="script.js"></script>
-    <script src="chat.js"></script>
-    <script src="call.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
-
