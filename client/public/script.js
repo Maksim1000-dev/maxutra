@@ -1,213 +1,217 @@
+let socket = null;
 let currentUser = null;
-let socket = null; // ✅ ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ — ИСПОЛЬЗУЕТСЯ В chat.js
-let authState = 'username';
+let currentChatWith = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    checkSavedSession();
-    setupAuthEvents();
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+  const savedUser = localStorage.getItem('maxutra_user');
+  if (savedUser) {
+    currentUser = savedUser;
+    showChatScreen();
+    connectSocket();
+  }
 });
 
-function checkSavedSession() {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        currentUser = savedUser;
-        showChatScreen();
-        initializeChat();
+// Подключение WebSocket
+function connectSocket() {
+  socket = io();
+
+  socket.on('connect', () => {
+    console.log('✅ Подключено к серверу');
+    if (currentUser) {
+      socket.emit('join', currentUser);
     }
+  });
+
+  socket.on('receiveMessage', (msg) => {
+    const messagesContainer = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `message ${msg.sender === currentUser ? 'sent' : 'received'}`;
+    div.textContent = `${msg.sender}: ${msg.text}`;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  });
+
+  socket.on('disconnect', () => {
+    showChatMessage('❌ Соединение потеряно', 'error');
+  });
 }
 
-function setupAuthEvents() {
-    const usernameInput = document.getElementById('usernameInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
-    
-    usernameInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            if (authState === 'username') {
-                checkUsername();
-            }
-        }
-    });
-    
-    passwordInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            handleAuth();
-        }
-    });
-    
-    confirmPasswordInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            handleAuth();
-        }
-    });
-}
+// Регистрация
+async function register() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
 
-async function checkUsername() {
-    const usernameInput = document.getElementById('usernameInput');
-    const username = usernameInput.value.trim();
-    
-    if (!username) {
-        showAuthMessage('Пожалуйста, введите имя пользователя', 'error');
-        return;
-    }
-    
-    if (username.length < 2) {
-        showAuthMessage('Имя должно содержать минимум 2 символа', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/check-user', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: username })
-        });
-        
-        const data = await response.json();
-        
-        if (data.exists) {
-            showPasswordField('login');
-            showAuthMessage('Пользователь найден. Введите пароль.', 'success');
-        } else {
-            showPasswordField('register');
-            showAuthMessage('Новый пользователь. Придумайте пароль.', 'success');
-        }
-        
-    } catch (error) {
-        showAuthMessage('Ошибка соединения с сервером', 'error');
-        console.error('Ошибка проверки пользователя:', error);
-    }
-}
+  if (!username || !password) {
+    showAuthMessage('Заполните все поля', 'error');
+    return;
+  }
 
-function showPasswordField(mode) {
-    const passwordGroup = document.getElementById('passwordGroup');
-    const passwordInput = document.getElementById('passwordInput');
-    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
-    const startBtn = document.getElementById('startBtn');
-    const loginBtn = document.getElementById('loginBtn');
-    const registerBtn = document.getElementById('registerBtn');
-    
-    passwordGroup.style.display = 'block';
-    passwordInput.value = '';
-    
-    if (mode === 'login') {
-        confirmPasswordInput.style.display = 'none';
-        startBtn.style.display = 'none';
-        loginBtn.style.display = 'block';
-        registerBtn.style.display = 'none';
-        authState = 'password';
+  try {
+    const res = await fetch('/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showAuthMessage('Регистрация успешна! Войдите.', 'success');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
     } else {
-        confirmPasswordInput.style.display = 'block';
-        confirmPasswordInput.value = '';
-        startBtn.style.display = 'none';
-        loginBtn.style.display = 'none';
-        registerBtn.style.display = 'block';
-        authState = 'confirm';
+      showAuthMessage(data.error, 'error');
     }
-    
-    passwordInput.focus();
+  } catch (err) {
+    showAuthMessage('Ошибка соединения', 'error');
+  }
 }
 
-async function handleAuth() {
-    const username = document.getElementById('usernameInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const confirmPassword = document.getElementById('confirmPasswordInput').value;
-    
-    if (!password) {
-        showAuthMessage('Введите пароль', 'error');
-        return;
+// Вход
+async function login() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !password) {
+    showAuthMessage('Заполните все поля', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      currentUser = data.username;
+      localStorage.setItem('maxutra_user', currentUser);
+      showChatScreen();
+      connectSocket();
+    } else {
+      showAuthMessage(data.error, 'error');
     }
-    
-    if (authState === 'confirm' && password !== confirmPassword) {
-        showAuthMessage('Пароли не совпадают', 'error');
-        return;
-    }
-    
-    try {
-        const endpoint = authState === 'password' ? '/login' : '/register';
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            currentUser = username;
-            localStorage.setItem('currentUser', username);
-            showChatScreen();
-            initializeChat();
-        } else {
-            showAuthMessage(data.message || 'Ошибка авторизации', 'error');
-        }
-        
-    } catch (error) {
-        showAuthMessage('Ошибка соединения с сервером', 'error');
-        console.error('Ошибка авторизации:', error);
-    }
+  } catch (err) {
+    showAuthMessage('Ошибка соединения', 'error');
+  }
 }
 
+// Выход
 function logout() {
-    if (socket) {
-        socket.close();
-    }
-    
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('chatHistory');
-    currentUser = null;
-    
-    resetAuthForm();
-    showAuthScreen();
+  localStorage.removeItem('maxutra_user');
+  currentUser = null;
+  currentChatWith = null;
+  document.getElementById('chat').classList.remove('active');
+  document.getElementById('auth').classList.add('active');
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('users').innerHTML = '';
+  if (socket) socket.disconnect();
 }
 
-function resetAuthForm() {
-    document.getElementById('usernameInput').value = '';
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('confirmPasswordInput').value = '';
-    document.getElementById('passwordGroup').style.display = 'none';
-    
-    document.getElementById('startBtn').style.display = 'block';
-    document.getElementById('loginBtn').style.display = 'none';
-    document.getElementById('registerBtn').style.display = 'none';
-    
-    authState = 'username';
-    hideAuthMessage();
-}
-
-function showAuthScreen() {
-    document.getElementById('authScreen').classList.add('active');
-    document.getElementById('chatScreen').classList.remove('active');
-}
-
-function showChatScreen() {
-    document.getElementById('authScreen').classList.remove('active');
-    document.getElementById('chatScreen').classList.add('active');
-    document.getElementById('currentUserName').textContent = currentUser;
-    hideAuthMessage();
-}
-
+// Показать сообщение
 function showAuthMessage(message, type) {
-    const authMessage = document.getElementById('authMessage');
-    authMessage.textContent = message;
-    authMessage.className = `auth-message ${type}`;
-    authMessage.style.display = 'block';
+  const el = document.getElementById('message');
+  el.textContent = message;
+  el.className = type;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
 }
 
-function hideAuthMessage() {
-    const authMessage = document.getElementById('authMessage');
-    authMessage.style.display = 'none';
+// Показать сообщение в чате
+function showChatMessage(message, type) {
+  const messagesContainer = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message system';
+  div.style.backgroundColor = type === 'error' ? '#dc3545' : '#28a745';
+  div.style.color = 'white';
+  div.style.textAlign = 'center';
+  div.style.padding = '10px';
+  div.style.borderRadius = '10px';
+  div.style.margin = '10px 0';
+  div.textContent = message;
+  messagesContainer.appendChild(div);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  setTimeout(() => div.remove(), 3000);
 }
 
-function initializeChat() {
-    if (typeof initChat === 'function') {
-        initChat(currentUser);
-    }
+// Показать экран чата
+function showChatScreen() {
+  document.getElementById('auth').classList.remove('active');
+  document.getElementById('chat').classList.add('active');
+  document.getElementById('search').value = '';
+  document.getElementById('users').innerHTML = '';
+  document.getElementById('messages').innerHTML = '';
+  loadUsers();
 }
+
+// Загрузить список пользователей
+async function loadUsers() {
+  try {
+    const res = await fetch('/users');
+    const users = await res.json();
+    const usersList = document.getElementById('users');
+    usersList.innerHTML = '';
+
+    users.forEach(user => {
+      const li = document.createElement('li');
+      li.textContent = user;
+      li.onclick = () => selectUser(user);
+      usersList.appendChild(li);
+    });
+  } catch (err) {
+    showChatMessage('Ошибка загрузки пользователей', 'error');
+  }
+}
+
+// Поиск пользователей
+function searchUsers() {
+  const query = document.getElementById('search').value.toLowerCase();
+  const items = document.querySelectorAll('#users li');
+
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(query) ? 'block' : 'none';
+  });
+}
+
+// Выбор пользователя
+function selectUser(username) {
+  if (username === currentUser) return;
+
+  currentChatWith = username;
+  document.querySelectorAll('#users li').forEach(el => el.classList.remove('active'));
+  document.querySelector(`#users li:contains("${username}")`)?.classList.add('active');
+  document.getElementById('messageInput').focus();
+}
+
+// Отправить сообщение
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text || !currentChatWith) return;
+
+  socket.emit('sendMessage', {
+    text,
+    receiver: currentChatWith
+  });
+
+  addMessage(currentUser, text, 'sent');
+  input.value = '';
+}
+
+// Добавить сообщение
+function addMessage(sender, text, type) {
+  const messagesContainer = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `message ${type}`;
+  div.textContent = `${sender}: ${text}`;
+  messagesContainer.appendChild(div);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Проверка наличия элемента с текстом (для CSS-селектора)
+Element.prototype.contains = function(text) {
+  return this.textContent.toLowerCase().includes(text.toLowerCase());
+};
