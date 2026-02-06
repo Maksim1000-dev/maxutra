@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maxutra - Админ-панель</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        .admin-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #db2777 100%);
+        }
+        
+        .sidebar-admin {
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+        .card-dark {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-admin {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+        }
+        
+        .input-admin {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-admin:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #7c3aed;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-dot {
+            animation: pulseDot 2s infinite;
+        }
+        
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+        
+        .report-card {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(219, 39, 119, 0.2) 100%);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+        
+        .notification-badge {
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+        }
+        
+        .action-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        .user-card {
+            transition: all 0.2s ease;
+        }
+        
+        .user-card:hover {
+            transform: translateX(5px);
+            border-left: 3px solid #7c3aed;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar-admin {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                z-index: 50;
+                width: 280px;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar-admin.open {
+                left: 0;
+            }
+            
+            .mobile-menu-btn {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+            <div class="card-dark rounded-3xl p-8 w-full max-w-md fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 mx-auto mb-4 rounded-2xl admin-gradient flex items-center justify-center glow-effect">
+                        <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold mb-2">
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">MAXUTRA</span>
+                    </h1>
+                    <p class="text-white/50">Панель администратора v2.1</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-white/70 mb-2">Пароль администратора</label>
+                        <input type="password" id="adminPassword" placeholder="••••••••••" 
+                            onkeydown="if(event.key==='Enter')document.getElementById('adminCode').focus()"
+                            class="input-admin w-full rounded-xl px-4 py-3 text-white placeholder-white/30">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-white/70 mb-2">Кодовое слово</label>
+                        <input type="text" id="adminCode" placeholder="Введите код" 
+                            onkeydown="if(event.key==='Enter')adminLogin()"
+                            class="input-admin w-full rounded-xl px-4 py-3 text-white placeholder-white/30">
+                    </div>
+                    <button onclick="adminLogin()" class="btn-admin w-full rounded-xl py-3 font-semibold text-white mt-4">
+                        Войти в панель
+                    </button>
+                </div>
+                
+                <div id="loginError" class="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-center hidden"></div>
+            </div>
+        </div>
+        
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="hidden">
+            <!-- Mobile Header -->
+            <div class="md:hidden fixed top-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-b border-white/10 p-4 z-40 flex items-center justify-between">
+                <button onclick="toggleSidebar()" class="mobile-menu-btn p-2 hover:bg-white/10 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <span class="font-bold text-lg">MAXUTRA Admin</span>
+                <div class="w-10"></div>
+            </div>
+            
+            <div class="flex h-screen md:pt-0 pt-16">
+                <!-- Sidebar -->
+                <div class="sidebar-admin w-64 flex flex-col border-r border-white/10" id="sidebar">
+                    <div class="p-6 border-b border-white/10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl admin-gradient flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="font-bold text-lg">MAXUTRA</h1>
+                                <p class="text-xs text-white/50">Админ-панель v2.1</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="flex-1 p-4 space-y-2 overflow-y-auto">
+                        <button onclick="showTab('monitoring')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-monitoring">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span>Мониторинг</span>
+                        </button>
+                        <button onclick="showTab('moderation')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-moderation">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            <span>Модерация</span>
+                            <span id="reportsBadge" class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full hidden notification-badge">0</span>
+                        </button>
+                        <button onclick="showTab('users')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-users">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span>Управление</span>
+                        </button>
+                        <button onclick="showTab('recovery')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-recovery">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                            </svg>
+                            <span>Восстановление</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Server Status -->
+                    <div class="p-4 mx-4 mb-4 rounded-xl bg-green-500/10 border border-green-500/30">
+                        <div class="flex items-center gap-2 text-green-400 text-sm">
+                            <span class="online-indicator"></span>
+                            <span>Сервер онлайн</span>
+                        </div>
+                        <p class="text-xs text-white/40 mt-1" id="serverTime">--:--:--</p>
+                    </div>
+                    
+                    <div class="p-4 border-t border-white/10">
+                        <button onclick="adminLogout()" class="w-full p-3 rounded-xl text-left flex items-center gap-3 text-red-400 hover:bg-red-500/10 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            <span>Выйти</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Overlay for mobile -->
+                <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+                
+                <!-- Content -->
+                <div class="flex-1 overflow-y-auto scrollbar-thin bg-gradient-to-br from-slate-900 to-slate-800">
+                    <!-- Monitoring Tab -->
+                    <div id="content-monitoring" class="p-6 hidden">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-bold">📊 Мониторинг</h2>
+                            <button onclick="loadStats()" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition text-sm flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Обновить
+                            </button>
+                        </div>
+                        
+                        <!-- Stats Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <div class="stat-card rounded-2xl p-6 hover:scale-105 transition cursor-default">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Всего пользователей</p>
+                                        <p class="text-3xl font-bold mt-1" id="statTotalUsers">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-card rounded-2xl p-6 hover:scale-105 transition cursor-default">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Сейчас онлайн</p>
+                                        <p class="text-3xl font-bold mt-1 text-green-400" id="statOnlineNow">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                                        <div class="w-4 h-4 rounded-full bg-green-500 pulse-dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-card rounded-2xl p-6 hover:scale-105 transition cursor-default">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Регистраций сегодня</p>
+                                        <p class="text-3xl font-bold mt-1 text-pink-400" id="statTodayRegs">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-card rounded-2xl p-6 hover:scale-105 transition cursor-default">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Жалоб на рассмотрении</p>
+                                        <p class="text-3xl font-bold mt-1 text-yellow-400" id="statPendingReports">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Charts Row -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                            <div class="card-dark rounded-2xl p-6">
+                                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                                    <span class="online-indicator"></span>
+                                    Онлайн за 7 дней
+                                </h3>
+                                <div style="height: 250px;">
+                                    <canvas id="onlineChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-dark rounded-2xl p-6">
+                                <h3 class="text-lg font-semibold mb-4">📈 Регистрации за 7 дней</h3>
+                                <div style="height: 250px;">
+                                    <canvas id="regsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Live Registrations -->
+                        <div class="card-dark rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                                    Регистрации в реальном времени
+                                </h3>
+                                <span class="text-xs text-white/40">Последние 20</span>
+                            </div>
+                            <div id="liveRegistrations" class="space-y-2 max-h-80 overflow-y-auto scrollbar-thin">
+                                <p class="text-white/50 text-center py-4">Ожидание новых регистраций...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Moderation Tab -->
+                    <div id="content-moderation" class="p-6 hidden">
+                        <h2 class="text-2xl font-bold mb-6">👮 Модерация</h2>
+                        
+                        <!-- Quick Stats -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="bg-white/5 rounded-xl p-4 text-center">
+                                <p class="text-2xl font-bold text-blue-400" id="modStatTotal">0</p>
+                                <p class="text-xs text-white/50">Всего</p>
+                            </div>
+                            <div class="bg-white/5 rounded-xl p-4 text-center">
+                                <p class="text-2xl font-bold text-red-400" id="modStatBlocked">0</p>
+                                <p class="text-xs text-white/50">Заблокировано</p>
+                            </div>
+                            <div class="bg-white/5 rounded-xl p-4 text-center">
+                                <p class="text-2xl font-bold text-yellow-400" id="modStatWarned">0</p>
+                                <p class="text-xs text-white/50">С предупр.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Users -->
+                        <div class="card-dark rounded-2xl p-6 mb-6">
+                            <h3 class="text-lg font-semibold mb-4">🔍 Быстрый поиск</h3>
+                            <div class="flex gap-3">
+                                <input type="text" id="userSearchInput" placeholder="Имя или логин..." 
+                                    onkeydown="if(event.key==='Enter')searchUsers()"
+                                    class="input-admin flex-1 rounded-xl px-4 py-3 text-white">
+                                <button onclick="searchUsers()" class="btn-admin px-6 rounded-xl font-medium">
+                                    Найти
+                                </button>
+                            </div>
+                            <div id="userSearchResults" class="mt-4 space-y-2 max-h-64 overflow-y-auto scrollbar-thin"></div>
+                        </div>
+                        
+                        <!-- Reports -->
+                        <div class="card-dark rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">📩 Жалобы на рассмотрении</h3>
+                                <button onclick="loadReports()" class="text-sm text-purple-400 hover:text-purple-300">Обновить</button>
+                            </div>
+                            <div id="reportsList" class="space-y-3 max-h-[500px] overflow-y-auto scrollbar-thin">
+                                <p class="text-white/50 text-center py-4">Нет жалоб</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Users Management Tab -->
+                    <div id="content-users" class="p-6 hidden">
+                        <h2 class="text-2xl font-bold mb-6">⚙️ Управление пользователями</h2>
+                        
+                        <!-- Search -->
+                        <div class="card-dark rounded-2xl p-6 mb-6">
+                            <h3 class="text-lg font-semibold mb-4">🔍 Найти пользователя</h3>
+                            <div class="flex gap-3">
+                                <input type="text" id="manageUserSearch" placeholder="Введите имя или логин..." 
+                                    onkeydown="if(event.key==='Enter')searchUsersForManagement()"
+                                    class="input-admin flex-1 rounded-xl px-4 py-3 text-white">
+                                <button onclick="searchUsersForManagement()" class="btn-admin px-6 rounded-xl font-medium">
+                                    Найти
+                                </button>
+                            </div>
+                            <div id="manageUserResults" class="mt-4 space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></div>
+                        </div>
+                        
+                        <!-- All Users List -->
+                        <div class="card-dark rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">👥 Все пользователи</h3>
+                                <button onclick="loadAllUsers()" class="text-sm text-purple-400 hover:text-purple-300">Обновить список</button>
+                            </div>
+                            <div id="allUsersList" class="space-y-2 max-h-[500px] overflow-y-auto scrollbar-thin">
+                                <p class="text-white/50 text-center py-4">Загрузка...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recovery Tab -->
+                    <div id="content-recovery" class="p-6 hidden">
+                        <h2 class="text-2xl font-bold mb-6">💾 Восстановление данных</h2>
+                        
+                        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mb-6">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-medium text-yellow-400">Внимание!</p>
+                                    <p class="text-sm text-white/60">Импорт полностью заменит текущую базу пользователей.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="card-dark rounded-2xl p-6 hover:border-green-500/50 transition">
+                                <div class="text-center">
+                                    <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                                        <svg class="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xl font-semibold mb-2">Экспорт</h3>
+                                    <p class="text-white/50 text-sm mb-6">Скачать JSON со всеми данными</p>
+                                    <button onclick="exportUsers()" class="btn-admin w-full rounded-xl py-3 font-medium">
+                                        Экспорт в JSON
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="card-dark rounded-2xl p-6 hover:border-blue-500/50 transition">
+                                <div class="text-center">
+                                    <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                                        <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xl font-semibold mb-2">Импорт</h3>
+                                    <p class="text-white/50 text-sm mb-6">Загрузить из JSON файла</p>
+                                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importUsers()">
+                                    <button onclick="document.getElementById('importFile').click()" class="w-full rounded-xl py-3 font-medium bg-blue-600 hover:bg-blue-700 transition">
+                                        Импорт из JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="recoveryMessage" class="mt-6 p-4 rounded-xl text-center hidden"></div>
+                        
+                        <div class="card-dark rounded-2xl p-6 mt-6">
+                            <h3 class="text-lg font-semibold mb-4">📋 Информация о базе</h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-white/5 rounded-lg p-3">
+                                    <p class="text-white/50">Пользователей</p>
+                                    <p class="text-xl font-bold" id="dbUsersCount">-</p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3">
+                                    <p class="text-white/50">Обновлено</p>
+                                    <p class="text-xl font-bold" id="dbLastUpdate">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Block User Modal -->
+    <div id="blockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 fade-in border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold">🚫 Заблокировать</h3>
+                <button onclick="closeBlockModal()" class="p-2 hover:bg-white/10 rounded-lg transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <input type="hidden" id="blockUserId">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-white/70 mb-2">Причина блокировки</label>
+                    <select id="blockReason" class="input-admin w-full rounded-xl px-4 py-3 text-white" onchange="updateBlockInfo()">
+                        <option value="rules">Нарушение правил MAXUTRA</option>
+                        <option value="spam">Отправка нежелательных сообщений</option>
+                        <option value="offensive">Оскорбления пользователей</option>
+                        <option value="insult_mod">Оскорбление модерации/администрации</option>
+                        <option value="other">Спам</option>
+                    </select>
+                </div>
+                
+                <div id="blockInfo" class="p-4 bg-gradient-to-r from-yellow-500/20 to-red-500/20 border border-yellow-500/50 rounded-xl">
+                    <p class="text-yellow-300 text-sm font-medium mb-2">⚠️ Система блокировок:</p>
+                    <ul class="text-sm text-white/70 space-y-1">
+                        <li>• 1-я блокировка: <span class="text-yellow-400">1 день</span></li>
+                        <li>• 2-я блокировка: <span class="text-orange-400">2 дня</span></li>
+                        <li>• 3-я блокировка: <span class="text-red-400">удаление аккаунта</span></li>
+                    </ul>
+                </div>
+                
+                <div id="insultInfo" class="hidden p-4 bg-red-500/20 border border-red-500/50 rounded-xl">
+                    <p class="text-red-300 text-sm font-medium">🔥 За оскорбление модерации:</p>
+                    <p class="text-sm text-white/70">Блокировка на <span class="text-red-400">1 день</span> + мут на <span class="text-orange-400">2 дня</span></p>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeBlockModal()" class="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition font-medium">
+                        Отмена
+                    </button>
+                    <button onclick="confirmBlock()" class="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 transition font-medium">
+                        Заблокировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 fade-in border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold">✏️ Редактировать пользователя</h3>
+                <button onclick="closeEditModal()" class="p-2 hover:bg-white/10 rounded-lg transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <input type="hidden" id="editUserId">
+            
+            <div class="space-y-4">
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl font-bold" id="editUserAvatar">?</div>
+                    <p class="text-sm text-white/50 mt-2" id="editUserUsername">@username</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-white/70 mb-2">Отображаемое имя</label>
+                    <input type="text" id="editDisplayName" placeholder="Новое имя"
+                        class="input-admin w-full rounded-xl px-4 py-3 text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-white/70 mb-2">Новый пароль</label>
+                    <div class="relative">
+                        <input type="text" id="editPassword" placeholder="Оставьте пустым, чтобы не менять"
+                            class="input-admin w-full rounded-xl px-4 py-3 text-white pr-24">
+                        <button onclick="generatePassword()" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-purple-500/30 hover:bg-purple-500/50 rounded-lg text-xs transition">
+                            Генерировать
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white/5 rounded-xl p-4">
+                    <p class="text-xs text-white/50">ID: <span id="editUserIdDisplay" class="text-white/70 font-mono"></span></p>
+                    <p class="text-xs text-white/50 mt-1">Создан: <span id="editUserCreated" class="text-white/70"></span></p>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeEditModal()" class="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition font-medium">
+                        Отмена
+                    </button>
+                    <button onclick="saveUserChanges()" class="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 transition font-medium">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let adminToken = null;
+        let ws = null;
+        let onlineChart = null;
+        let regsChart = null;
+        let statsInterval = null;
+        
+        function init() {
+            adminToken = localStorage.getItem('maxutra_admin_token');
+            if (adminToken) {
+                showAdminPanel();
+            }
+            updateServerTime();
+            setInterval(updateServerTime, 1000);
+        }
+        
+        function updateServerTime() {
+            const el = document.getElementById('serverTime');
+            if (el) {
+                el.textContent = new Date().toLocaleTimeString('ru-RU');
+            }
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('hidden');
+        }
+        
+        async function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            const code = document.getElementById('adminCode').value;
+            
+            try {
+                const res = await fetch(API_URL + '/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, code })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    adminToken = data.token;
+                    localStorage.setItem('maxutra_admin_token', adminToken);
+                    showAdminPanel();
+                } else {
+                    showLoginError(data.error || 'Неверные данные');
+                }
+            } catch (e) {
+                showLoginError('Ошибка подключения');
+            }
+        }
+        
+        function showLoginError(msg) {
+            const el = document.getElementById('loginError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+        
+        function showAdminPanel() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            connectWebSocket();
+            showTab('monitoring');
+            loadStats();
+            loadReports();
+            
+            statsInterval = setInterval(() => {
+                loadStats();
+                loadReports();
+            }, 30000);
+        }
+        
+        function adminLogout() {
+            localStorage.removeItem('maxutra_admin_token');
+            adminToken = null;
+            if (ws) ws.close();
+            if (statsInterval) clearInterval(statsInterval);
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+        
+        function connectWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(wsProtocol + '//' + window.location.host);
+            
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'admin_auth' }));
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'new_registration') {
+                        addLiveRegistration(data.user);
+                        loadStats();
+                        playNotificationSound();
+                    }
+                } catch (e) {}
+            };
+            
+            ws.onclose = () => {
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+        
+        function playNotificationSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 800;
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {}
+        }
+        
+        function addLiveRegistration(user) {
+            const container = document.getElementById('liveRegistrations');
+            const emptyMsg = container.querySelector('.text-white\\/50');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const time = new Date(user.timestamp).toLocaleTimeString('ru-RU');
+            const html = `
+                <div class="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/30 rounded-xl fade-in">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold">
+                        ${user.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium truncate">${escapeHtml(user.displayName)}</p>
+                        <p class="text-xs text-white/50">@${escapeHtml(user.username)}</p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-xs text-green-400 font-medium">✓ Новый</p>
+                        <p class="text-xs text-white/50">${time}</p>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', html);
+            
+            while (container.children.length > 20) {
+                container.lastChild.remove();
+            }
+        }
+        
+        function showTab(tabName) {
+            ['monitoring', 'moderation', 'users', 'recovery'].forEach(tab => {
+                const content = document.getElementById('content-' + tab);
+                const tabBtn = document.getElementById('tab-' + tab);
+                if (content) content.classList.add('hidden');
+                if (tabBtn) tabBtn.classList.remove('active');
+            });
+            
+            const content = document.getElementById('content-' + tabName);
+            const tabBtn = document.getElementById('tab-' + tabName);
+            if (content) content.classList.remove('hidden');
+            if (tabBtn) tabBtn.classList.add('active');
+            
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.add('hidden');
+            }
+            
+            if (tabName === 'monitoring') loadStats();
+            if (tabName === 'moderation') { loadReports(); loadModerationStats(); }
+            if (tabName === 'users') loadAllUsers();
+            if (tabName === 'recovery') loadDbInfo();
+        }
+        
+        async function loadStats() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/stats');
+                const data = await res.json();
+                
+                document.getElementById('statTotalUsers').textContent = data.totalUsers;
+                document.getElementById('statOnlineNow').textContent = data.onlineNow;
+                
+                const today = new Date().toDateString();
+                const todayRegs = data.registrations.filter(r => 
+                    new Date(r.timestamp).toDateString() === today
+                ).length;
+                document.getElementById('statTodayRegs').textContent = todayRegs;
+                
+                updateOnlineChart(data.onlineHistory);
+                updateRegsChart(data.registrations);
+                
+                if (data.registrations.length > 0) {
+                    const container = document.getElementById('liveRegistrations');
+                    container.innerHTML = data.registrations.slice(-20).reverse().map(user => `
+                        <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold">
+                                ${user.displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium truncate">${escapeHtml(user.displayName)}</p>
+                                <p class="text-xs text-white/50">@${escapeHtml(user.username)}</p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-xs text-white/50">${formatDate(user.timestamp)}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Error loading stats:', e);
+            }
+        }
+        
+        async function loadModerationStats() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/users');
+                const users = await res.json();
+                
+                document.getElementById('modStatTotal').textContent = users.length;
+                document.getElementById('modStatBlocked').textContent = users.filter(u => u.blocked).length;
+                document.getElementById('modStatWarned').textContent = users.filter(u => u.blockCount > 0).length;
+            } catch (e) {}
+        }
+        
+        async function loadDbInfo() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/stats');
+                const data = await res.json();
+                document.getElementById('dbUsersCount').textContent = data.totalUsers;
+                document.getElementById('dbLastUpdate').textContent = new Date().toLocaleString('ru-RU');
+            } catch (e) {}
+        }
+        
+        async function loadAllUsers() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/users');
+                const users = await res.json();
+                
+                const container = document.getElementById('allUsersList');
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<p class="text-white/50 text-center py-4">Нет пользователей</p>';
+                    return;
+                }
+                
+                container.innerHTML = users.map(user => renderUserCard(user, true)).join('');
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+        
+        function renderUserCard(user, showEdit = false) {
+            const statusBadges = [];
+            if (user.blocked) statusBadges.push('<span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">🔒 Блок</span>');
+            if (user.blockCount > 0) statusBadges.push('<span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">⚠️ ' + user.blockCount + '</span>');
+            
+            const editBtn = showEdit ? `
+                <button onclick="openEditModal('${user.id}')" class="action-btn p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" title="Редактировать">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </button>
+            ` : '';
+            
+            return `
+                <div class="user-card flex items-center gap-3 p-4 bg-white/5 rounded-xl">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold text-lg flex-shrink-0">
+                        ${user.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold truncate">${escapeHtml(user.displayName)}</p>
+                        <p class="text-sm text-white/50 truncate">@${escapeHtml(user.username)}</p>
+                        <div class="flex gap-1 mt-1 flex-wrap">${statusBadges.join('')}</div>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        ${editBtn}
+                        <button onclick="removeFromGroups('${user.id}')" class="action-btn p-2 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" title="Удалить из групп">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                        ${user.blocked ? 
+                            `<button onclick="unblockUser('${user.id}')" class="action-btn px-3 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm">Разблок</button>` :
+                            `<button onclick="showBlockModal('${user.id}')" class="action-btn p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30" title="Заблокировать">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                </svg>
+                            </button>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateOnlineChart(history) {
+            const ctx = document.getElementById('onlineChart').getContext('2d');
+            
+            const dayData = {};
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' });
+                dayData[key] = [];
+            }
+            
+            history.forEach(h => {
+                const d = new Date(h.timestamp);
+                const key = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' });
+                if (dayData[key] !== undefined) {
+                    dayData[key].push(h.count);
+                }
+            });
+            
+            const labels = Object.keys(dayData);
+            const data = labels.map(l => {
+                const counts = dayData[l];
+                return counts.length > 0 ? Math.max(...counts) : 0;
+            });
+            
+            if (onlineChart) {
+                onlineChart.data.labels = labels;
+                onlineChart.data.datasets[0].data = data;
+                onlineChart.update();
+            } else {
+                onlineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Макс. онлайн',
+                            data: data,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateRegsChart(registrations) {
+            const ctx = document.getElementById('regsChart').getContext('2d');
+            
+            const dayData = {};
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' });
+                dayData[key] = 0;
+            }
+            
+            registrations.forEach(r => {
+                const d = new Date(r.timestamp);
+                const key = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' });
+                if (dayData[key] !== undefined) {
+                    dayData[key]++;
+                }
+            });
+            
+            const labels = Object.keys(dayData);
+            const data = Object.values(dayData);
+            
+            if (regsChart) {
+                regsChart.data.labels = labels;
+                regsChart.data.datasets[0].data = data;
+                regsChart.update();
+            } else {
+                regsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Регистрации',
+                            data: data,
+                            backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                            borderColor: '#a855f7',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                            x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        async function searchUsers() {
+            const query = document.getElementById('userSearchInput').value.trim();
+            if (!query) return;
+            
+            try {
+                const res = await fetch(API_URL + '/api/admin/users/search?query=' + encodeURIComponent(query));
+                const users = await res.json();
+                
+                const container = document.getElementById('userSearchResults');
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<p class="text-white/50 text-center py-4">Не найдено</p>';
+                    return;
+                }
+                
+                container.innerHTML = users.map(user => renderUserCard(user, false)).join('');
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+        
+        async function searchUsersForManagement() {
+            const query = document.getElementById('manageUserSearch').value.trim();
+            if (!query) return;
+            
+            try {
+                const res = await fetch(API_URL + '/api/admin/users/search?query=' + encodeURIComponent(query));
+                const users = await res.json();
+                
+                const container = document.getElementById('manageUserResults');
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<p class="text-white/50 text-center py-4">Не найдено</p>';
+                    return;
+                }
+                
+                container.innerHTML = users.map(user => renderUserCard(user, true)).join('');
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+        
+        // Edit User Modal
+        async function openEditModal(userId) {
+            try {
+                const res = await fetch(API_URL + '/api/admin/users/' + userId);
+                const user = await res.json();
+                
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUserAvatar').textContent = user.displayName.charAt(0).toUpperCase();
+                document.getElementById('editUserUsername').textContent = '@' + user.username;
+                document.getElementById('editDisplayName').value = user.displayName;
+                document.getElementById('editPassword').value = '';
+                document.getElementById('editUserIdDisplay').textContent = user.id.slice(0, 8) + '...';
+                document.getElementById('editUserCreated').textContent = user.createdAt ? formatDate(user.createdAt) : 'Неизвестно';
+                
+                document.getElementById('editUserModal').classList.remove('hidden');
+            } catch (e) {
+                showNotification('Ошибка загрузки данных', 'error');
+            }
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editUserModal').classList.add('hidden');
+        }
+        
+        function generatePassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+            let pass = '';
+            for (let i = 0; i < 10; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('editPassword').value = pass;
+        }
+        
+        async function saveUserChanges() {
+            const userId = document.getElementById('editUserId').value;
+            const displayName = document.getElementById('editDisplayName').value.trim();
+            const password = document.getElementById('editPassword').value;
+            
+            try {
+                // Update name
+                if (displayName) {
+                    await fetch(API_URL + '/api/admin/users/' + userId + '/name', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ displayName })
+                    });
+                }
+                
+                // Update password if provided
+                if (password) {
+                    await fetch(API_URL + '/api/admin/users/' + userId + '/password', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+                }
+                
+                closeEditModal();
+                showNotification('Изменения сохранены!', 'success');
+                loadAllUsers();
+            } catch (e) {
+                showNotification('Ошибка сохранения', 'error');
+            }
+        }
+        
+        // Block Modal
+        function showBlockModal(userId) {
+            document.getElementById('blockUserId').value = userId;
+            document.getElementById('blockReason').value = 'rules';
+            updateBlockInfo();
+            document.getElementById('blockModal').classList.remove('hidden');
+        }
+        
+        function closeBlockModal() {
+            document.getElementById('blockModal').classList.add('hidden');
+        }
+        
+        function updateBlockInfo() {
+            const reason = document.getElementById('blockReason').value;
+            const blockInfo = document.getElementById('blockInfo');
+            const insultInfo = document.getElementById('insultInfo');
+            
+            if (reason === 'insult_mod') {
+                blockInfo.classList.add('hidden');
+                insultInfo.classList.remove('hidden');
+            } else {
+                blockInfo.classList.remove('hidden');
+                insultInfo.classList.add('hidden');
+            }
+        }
+        
+        async function confirmBlock() {
+            const userId = document.getElementById('blockUserId').value;
+            const reasonValue = document.getElementById('blockReason').value;
+            
+            const reasonTexts = {
+                'rules': 'Нарушение правил MAXUTRA',
+                'spam': 'Нарушение правил MAXUTRA - отправка нежелательных сообщений',
+                'offensive': 'Нарушение правил MAXUTRA - оскорбления',
+                'insult_mod': 'Оскорбление модерации и администрации MAXUTRA',
+                'other': 'Нарушение правил MAXUTRA - спам'
+            };
+            
+            try {
+                let res;
+                if (reasonValue === 'insult_mod') {
+                    res = await fetch(API_URL + '/api/admin/users/' + userId + '/block-insult', { method: 'POST' });
+                } else {
+                    res = await fetch(API_URL + '/api/admin/users/' + userId + '/block', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason: reasonTexts[reasonValue] })
+                    });
+                }
+                
+                const data = await res.json();
+                
+                closeBlockModal();
+                
+                if (data.deleted) {
+                    showNotification('Аккаунт удалён (3-я блокировка)', 'error');
+                } else if (data.muteDays) {
+                    showNotification(`Блок ${data.blockDays} дн. + мут ${data.muteDays} дн.`, 'success');
+                } else {
+                    showNotification('Заблокирован на ' + data.blockDays + ' дн.', 'success');
+                }
+                
+                searchUsers();
+                loadAllUsers();
+                loadModerationStats();
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+        
+        async function unblockUser(userId) {
+            if (!confirm('Разблокировать?')) return;
+            
+            try {
+                await fetch(API_URL + '/api/admin/users/' + userId + '/unblock', { method: 'POST' });
+                showNotification('Разблокирован', 'success');
+                searchUsers();
+                loadAllUsers();
+                loadModerationStats();
+            } catch (e) {}
+        }
+        
+        async function removeFromGroups(userId) {
+            if (!confirm('Удалить из всех групп?')) return;
+            
+            try {
+                await fetch(API_URL + '/api/admin/users/' + userId + '/remove-from-groups', { method: 'POST' });
+                showNotification('Удалён из групп', 'success');
+            } catch (e) {}
+        }
+        
+        function showNotification(text, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-xl shadow-lg z-[100] fade-in ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`;
+            notification.textContent = text;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        async function loadReports() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/reports');
+                const reports = await res.json();
+                
+                const badge = document.getElementById('reportsBadge');
+                const statEl = document.getElementById('statPendingReports');
+                
+                if (reports.length > 0) {
+                    badge.textContent = reports.length;
+                    badge.classList.remove('hidden');
+                    if (statEl) statEl.textContent = reports.length;
+                } else {
+                    badge.classList.add('hidden');
+                    if (statEl) statEl.textContent = '0';
+                }
+                
+                const container = document.getElementById('reportsList');
+                
+                if (reports.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8"><p class="text-white/50">✓ Нет жалоб</p></div>';
+                    return;
+                }
+                
+                container.innerHTML = reports.map(report => `
+                    <div class="report-card bg-white/5 rounded-xl p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="text-sm font-medium">#${report.id.slice(0, 8)}</p>
+                                <p class="text-xs text-white/40">${formatDate(report.createdAt)}</p>
+                            </div>
+                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">⏳</span>
+                        </div>
+                        
+                        <div class="bg-black/30 rounded-lg p-3 mb-3">
+                            <p class="text-xs text-white/50 mb-1">Сообщение:</p>
+                            <p class="text-white text-sm">"${escapeHtml(report.messageContent)}"</p>
+                        </div>
+                        
+                        <p class="text-sm text-white/60 mb-4">Причина: ${escapeHtml(report.reason || 'Не указана')}</p>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="handleReport('${report.id}', 'delete_message')" 
+                                class="action-btn px-3 py-2 rounded-lg bg-yellow-500/20 text-yellow-400 text-sm">
+                                🗑 Удалить
+                            </button>
+                            <button onclick="handleReport('${report.id}', 'mute_delete')" 
+                                class="action-btn px-3 py-2 rounded-lg bg-orange-500/20 text-orange-400 text-sm">
+                                🔇 Мут+удалить
+                            </button>
+                            <button onclick="showReportBlockModal('${report.id}')" 
+                                class="action-btn px-3 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm">
+                                🚫 Блок
+                            </button>
+                            <button onclick="dismissReport('${report.id}')" 
+                                class="action-btn px-3 py-2 rounded-lg bg-gray-500/20 text-gray-400 text-sm">
+                                ✗
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {}
+        }
+        
+        async function handleReport(reportId, action, blockReason = null) {
+            try {
+                await fetch(API_URL + '/api/admin/reports/' + reportId + '/handle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, blockReason })
+                });
+                showNotification('Обработано', 'success');
+                loadReports();
+            } catch (e) {}
+        }
+        
+        function showReportBlockModal(reportId) {
+            const reasons = [
+                '1. Нарушение правил MAXUTRA',
+                '2. Нежелательные сообщения',
+                '3. Оскорбления',
+                '4. Оскорбление модерации',
+                '5. Спам'
+            ];
+            
+            const choice = prompt(reasons.join('\n') + '\n\nВведите номер:');
+            
+            const reasonMap = {
+                '1': 'Нарушение правил MAXUTRA',
+                '2': 'Нарушение правил MAXUTRA - нежелательные сообщения',
+                '3': 'Нарушение правил MAXUTRA - оскорбления',
+                '4': 'Оскорбление модерации и администрации MAXUTRA',
+                '5': 'Нарушение правил MAXUTRA - спам'
+            };
+            
+            if (reasonMap[choice]) {
+                handleReport(reportId, 'block', reasonMap[choice]);
+            }
+        }
+        
+        async function dismissReport(reportId) {
+            try {
+                await fetch(API_URL + '/api/admin/reports/' + reportId + '/dismiss', { method: 'POST' });
+                showNotification('Отклонено', 'success');
+                loadReports();
+            } catch (e) {}
+        }
+        
+        async function exportUsers() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/export');
+                const data = await res.json();
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'maxutra_' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showRecoveryMessage('✅ Экспорт завершён! ' + data.users.length + ' пользователей', 'success');
+            } catch (e) {
+                showRecoveryMessage('❌ Ошибка экспорта', 'error');
+            }
+        }
+        
+        async function importUsers() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+            
+            if (!confirm('⚠️ Импорт заменит текущую базу!\n\nПродолжить?')) {
+                document.getElementById('importFile').value = '';
+                return;
+            }
+            
+            try {
+                const text = await file.text();
+                const users = JSON.parse(text);
+                
+                const res = await fetch(API_URL + '/api/admin/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ users })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    showRecoveryMessage('✅ Импортировано ' + data.count + ' пользователей', 'success');
+                    loadStats();
+                    loadDbInfo();
+                } else {
+                    showRecoveryMessage('❌ ' + data.error, 'error');
+                }
+            } catch (e) {
+                showRecoveryMessage('❌ Ошибка чтения файла', 'error');
+            }
+            
+            document.getElementById('importFile').value = '';
+        }
+        
+        function showRecoveryMessage(text, type) {
+            const el = document.getElementById('recoveryMessage');
+            el.textContent = text;
+            el.className = 'mt-6 p-4 rounded-xl text-center fade-in ' + 
+                (type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50');
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(timestamp) {
+            const d = new Date(timestamp);
+            return d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        init();
+    </script>
+</body>
+</html>
