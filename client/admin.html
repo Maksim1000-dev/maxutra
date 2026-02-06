@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maxutra - Админ-панель</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        .admin-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #db2777 100%);
+        }
+        
+        .sidebar-admin {
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+        .card-dark {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-admin {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+        }
+        
+        .input-admin {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-admin:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #7c3aed;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-dot {
+            animation: pulseDot 2s infinite;
+        }
+        
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+        
+        .report-card {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(219, 39, 119, 0.2) 100%);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+            <div class="card-dark rounded-3xl p-8 w-full max-w-md fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 mx-auto mb-4 rounded-2xl admin-gradient flex items-center justify-center">
+                        <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold mb-2">
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">MAXUTRA</span>
+                    </h1>
+                    <p class="text-white/50">Панель администратора</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-white/70 mb-2">Пароль администратора</label>
+                        <input type="password" id="adminPassword" placeholder="••••••••••" 
+                            class="input-admin w-full rounded-xl px-4 py-3 text-white placeholder-white/30">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-white/70 mb-2">Кодовое слово</label>
+                        <input type="text" id="adminCode" placeholder="Введите код" 
+                            class="input-admin w-full rounded-xl px-4 py-3 text-white placeholder-white/30">
+                    </div>
+                    <button onclick="adminLogin()" class="btn-admin w-full rounded-xl py-3 font-semibold text-white mt-4">
+                        Войти в панель
+                    </button>
+                </div>
+                
+                <div id="loginError" class="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-center hidden"></div>
+            </div>
+        </div>
+        
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="hidden">
+            <div class="flex h-screen">
+                <!-- Sidebar -->
+                <div class="sidebar-admin w-64 flex flex-col border-r border-white/10">
+                    <div class="p-6 border-b border-white/10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl admin-gradient flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="font-bold text-lg">MAXUTRA</h1>
+                                <p class="text-xs text-white/50">Админ-панель</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="flex-1 p-4 space-y-2">
+                        <button onclick="showTab('monitoring')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-monitoring">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span>Мониторинг</span>
+                        </button>
+                        <button onclick="showTab('moderation')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-moderation">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            <span>Модерация</span>
+                            <span id="reportsBadge" class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                        </button>
+                        <button onclick="showTab('recovery')" class="tab-btn w-full p-3 rounded-xl text-left flex items-center gap-3 transition hover:bg-white/10" id="tab-recovery">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                            </svg>
+                            <span>Восстановление</span>
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 border-t border-white/10">
+                        <button onclick="adminLogout()" class="w-full p-3 rounded-xl text-left flex items-center gap-3 text-red-400 hover:bg-red-500/10 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            <span>Выйти</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="flex-1 overflow-y-auto scrollbar-thin">
+                    <!-- Monitoring Tab -->
+                    <div id="content-monitoring" class="p-6 hidden">
+                        <h2 class="text-2xl font-bold mb-6">📊 Мониторинг</h2>
+                        
+                        <!-- Stats Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                            <div class="stat-card rounded-2xl p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Всего пользователей</p>
+                                        <p class="text-3xl font-bold mt-1" id="statTotalUsers">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-card rounded-2xl p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Сейчас онлайн</p>
+                                        <p class="text-3xl font-bold mt-1" id="statOnlineNow">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                                        <div class="w-3 h-3 rounded-full bg-green-500 pulse-dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-card rounded-2xl p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white/50 text-sm">Регистраций сегодня</p>
+                                        <p class="text-3xl font-bold mt-1" id="statTodayRegs">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Online Chart -->
+                        <div class="card-dark rounded-2xl p-6 mb-8">
+                            <h3 class="text-lg font-semibold mb-4">Онлайн за 7 дней</h3>
+                            <div style="height: 300px;">
+                                <canvas id="onlineChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Live Registrations -->
+                        <div class="card-dark rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">🔴 Регистрации в реальном времени</h3>
+                            <div id="liveRegistrations" class="space-y-2 max-h-80 overflow-y-auto scrollbar-thin">
+                                <p class="text-white/50 text-center py-4">Ожидание новых регистраций...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Moderation Tab -->
+                    <div id="content-moderation" class="p-6 hidden">
+                        <h2 class="text-2xl font-bold mb-6">👮 Модерация</h2>
+                        
+                        <!-- Search Users -->
+                        <div class="card-dark rounded-2xl p-6 mb-6">
+                            <h3 class="text-lg font-semibold mb-4">Поиск пользователей</h3>
+                            <div class="flex gap-3">
+                                <input type="text" id="userSearchInput" placeholder="Введите имя или логин..." 
+                                    class="input-admin flex-1 rounded-xl px-4 py-3 text-white">
+                                <button onclick="searchUsers()" class="btn-admin px-6 rounded-xl font-medium">
+                                    Найти
+                                </button>
+                            </div>
+                            <div id="userSearchResults" class="mt-4 space-y-2"></div>
+                        </div>
+                        
+                        <!-- Reports -->
+                        <div class="card-dark rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">📩 Жалобы на рассмотрении</h3>
+                            <div id="reportsList" class="space-y-3">
+                                <p class="text-white/50 text-center py-4">Нет жалоб на рассмотрении</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recovery Tab -->
+                    <div id="content-recovery" class="p-6 hidden">
+                        <h2 class="text-2xl font-bold mb-6">💾 Восстановление данных</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Export -->
+                            <div class="card-dark rounded-2xl p-6">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xl font-semibold mb-2">Экспорт пользователей</h3>
+                                    <p class="text-white/50 text-sm mb-6">Скачать JSON файл со всеми пользователями</p>
+                                    <button onclick="exportUsers()" class="btn-admin w-full rounded-xl py-3 font-medium">
+                                        Экспорт в JSON
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Import -->
+                            <div class="card-dark rounded-2xl p-6">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xl font-semibold mb-2">Импорт пользователей</h3>
+                                    <p class="text-white/50 text-sm mb-6">Загрузить пользователей из JSON файла</p>
+                                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importUsers()">
+                                    <button onclick="document.getElementById('importFile').click()" class="w-full rounded-xl py-3 font-medium bg-blue-600 hover:bg-blue-700 transition">
+                                        Импорт из JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="recoveryMessage" class="mt-6 p-4 rounded-xl text-center hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Block User Modal -->
+    <div id="blockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 fade-in">
+            <h3 class="text-xl font-semibold mb-4">Заблокировать пользователя</h3>
+            <input type="hidden" id="blockUserId">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-white/70 mb-2">Причина блокировки</label>
+                    <select id="blockReason" class="input-admin w-full rounded-xl px-4 py-3 text-white">
+                        <option value="Нарушение правил MAXUTRA">Нарушение правил MAXUTRA</option>
+                        <option value="Нарушение правил MAXUTRA - отправка нежелательных сообщений">Отправка нежелательных сообщений</option>
+                    </select>
+                </div>
+                
+                <div class="p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-xl">
+                    <p class="text-yellow-300 text-sm">
+                        ⚠️ 1-я блокировка: 1 день<br>
+                        ⚠️ 2-я блокировка: 2 дня<br>
+                        ⚠️ 3-я блокировка: удаление аккаунта
+                    </p>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeBlockModal()" class="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition">
+                        Отмена
+                    </button>
+                    <button onclick="confirmBlock()" class="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 transition font-medium">
+                        Заблокировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let adminToken = null;
+        let ws = null;
+        let onlineChart = null;
+        
+        // Check saved token
+        function init() {
+            adminToken = localStorage.getItem('maxutra_admin_token');
+            if (adminToken) {
+                showAdminPanel();
+            }
+        }
+        
+        // Admin login
+        async function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            const code = document.getElementById('adminCode').value;
+            
+            try {
+                const res = await fetch(API_URL + '/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, code })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    adminToken = data.token;
+                    localStorage.setItem('maxutra_admin_token', adminToken);
+                    showAdminPanel();
+                } else {
+                    showLoginError(data.error || 'Неверные данные');
+                }
+            } catch (e) {
+                showLoginError('Ошибка подключения к серверу');
+            }
+        }
+        
+        function showLoginError(msg) {
+            const el = document.getElementById('loginError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+        
+        function showAdminPanel() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            connectWebSocket();
+            showTab('monitoring');
+            loadStats();
+            loadReports();
+        }
+        
+        function adminLogout() {
+            localStorage.removeItem('maxutra_admin_token');
+            adminToken = null;
+            if (ws) ws.close();
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+        
+        // WebSocket for real-time updates
+        function connectWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(wsProtocol + '//' + window.location.host);
+            
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'admin_auth' }));
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'new_registration') {
+                        addLiveRegistration(data.user);
+                        loadStats();
+                    }
+                } catch (e) {}
+            };
+            
+            ws.onclose = () => {
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+        
+        function addLiveRegistration(user) {
+            const container = document.getElementById('liveRegistrations');
+            const emptyMsg = container.querySelector('.text-white\\/50');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const time = new Date(user.timestamp).toLocaleTimeString('ru-RU');
+            const html = `
+                <div class="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/30 rounded-xl fade-in">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold">
+                        ${user.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium">${escapeHtml(user.displayName)}</p>
+                        <p class="text-xs text-white/50">@${escapeHtml(user.username)}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-green-400">Новая регистрация</p>
+                        <p class="text-xs text-white/50">${time}</p>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', html);
+        }
+        
+        // Tabs
+        function showTab(tabName) {
+            ['monitoring', 'moderation', 'recovery'].forEach(tab => {
+                document.getElementById('content-' + tab).classList.add('hidden');
+                document.getElementById('tab-' + tab).classList.remove('active');
+            });
+            
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'monitoring') loadStats();
+            if (tabName === 'moderation') loadReports();
+        }
+        
+        // Load stats
+        async function loadStats() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/stats');
+                const data = await res.json();
+                
+                document.getElementById('statTotalUsers').textContent = data.totalUsers;
+                document.getElementById('statOnlineNow').textContent = data.onlineNow;
+                
+                // Count today's registrations
+                const today = new Date().toDateString();
+                const todayRegs = data.registrations.filter(r => 
+                    new Date(r.timestamp).toDateString() === today
+                ).length;
+                document.getElementById('statTodayRegs').textContent = todayRegs;
+                
+                // Update chart
+                updateOnlineChart(data.onlineHistory);
+                
+                // Update live registrations
+                if (data.registrations.length > 0) {
+                    const container = document.getElementById('liveRegistrations');
+                    container.innerHTML = data.registrations.slice(-10).reverse().map(user => `
+                        <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold">
+                                ${user.displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium">${escapeHtml(user.displayName)}</p>
+                                <p class="text-xs text-white/50">@${escapeHtml(user.username)}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-white/50">${formatDate(user.timestamp)}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Error loading stats:', e);
+            }
+        }
+        
+        function updateOnlineChart(history) {
+            const ctx = document.getElementById('onlineChart').getContext('2d');
+            
+            // Group by day
+            const dayData = {};
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' });
+                dayData[key] = [];
+            }
+            
+            history.forEach(h => {
+                const d = new Date(h.timestamp);
+                const key = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' });
+                if (dayData[key] !== undefined) {
+                    dayData[key].push(h.count);
+                }
+            });
+            
+            const labels = Object.keys(dayData);
+            const data = labels.map(l => {
+                const counts = dayData[l];
+                return counts.length > 0 ? Math.max(...counts) : 0;
+            });
+            
+            if (onlineChart) {
+                onlineChart.data.labels = labels;
+                onlineChart.data.datasets[0].data = data;
+                onlineChart.update();
+            } else {
+                onlineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Максимум онлайн',
+                            data: data,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.1)' },
+                                ticks: { color: 'rgba(255,255,255,0.5)' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.1)' },
+                                ticks: { color: 'rgba(255,255,255,0.5)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Search users
+        async function searchUsers() {
+            const query = document.getElementById('userSearchInput').value.trim();
+            if (!query) return;
+            
+            try {
+                const res = await fetch(API_URL + '/api/admin/users/search?query=' + encodeURIComponent(query));
+                const users = await res.json();
+                
+                const container = document.getElementById('userSearchResults');
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<p class="text-white/50 text-center py-4">Пользователи не найдены</p>';
+                    return;
+                }
+                
+                container.innerHTML = users.map(user => `
+                    <div class="flex items-center gap-3 p-4 bg-white/5 rounded-xl">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold text-lg">
+                            ${user.displayName.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold">${escapeHtml(user.displayName)}</p>
+                            <p class="text-sm text-white/50">@${escapeHtml(user.username)}</p>
+                            ${user.blocked ? '<span class="text-xs text-red-400">🔒 Заблокирован</span>' : ''}
+                            ${user.blockCount > 0 ? '<span class="text-xs text-yellow-400 ml-2">⚠️ Блокировок: ' + user.blockCount + '</span>' : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="removeFromGroups('${user.id}')" class="px-3 py-2 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition text-sm" title="Удалить из групп">
+                                👥
+                            </button>
+                            ${user.blocked ? 
+                                '<button onclick="unblockUser(\'' + user.id + '\')" class="px-3 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition text-sm">Разблокировать</button>' :
+                                '<button onclick="showBlockModal(\'' + user.id + '\')" class="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition text-sm">Заблокировать</button>'
+                            }
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error searching users:', e);
+            }
+        }
+        
+        // Block user modal
+        function showBlockModal(userId) {
+            document.getElementById('blockUserId').value = userId;
+            document.getElementById('blockModal').classList.remove('hidden');
+        }
+        
+        function closeBlockModal() {
+            document.getElementById('blockModal').classList.add('hidden');
+        }
+        
+        async function confirmBlock() {
+            const userId = document.getElementById('blockUserId').value;
+            const reason = document.getElementById('blockReason').value;
+            
+            try {
+                const res = await fetch(API_URL + '/api/admin/users/' + userId + '/block', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    closeBlockModal();
+                    if (data.deleted) {
+                        alert('Пользователь удалён (3-я блокировка)');
+                    } else {
+                        alert('Пользователь заблокирован на ' + data.blockDays + ' дн.');
+                    }
+                    searchUsers();
+                }
+            } catch (e) {
+                console.error('Error blocking user:', e);
+            }
+        }
+        
+        async function unblockUser(userId) {
+            if (!confirm('Разблокировать пользователя?')) return;
+            
+            try {
+                await fetch(API_URL + '/api/admin/users/' + userId + '/unblock', { method: 'POST' });
+                searchUsers();
+            } catch (e) {
+                console.error('Error unblocking user:', e);
+            }
+        }
+        
+        async function removeFromGroups(userId) {
+            if (!confirm('Удалить пользователя из всех групп?')) return;
+            
+            try {
+                await fetch(API_URL + '/api/admin/users/' + userId + '/remove-from-groups', { method: 'POST' });
+                alert('Пользователь удалён из всех групп');
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+        
+        // Reports
+        async function loadReports() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/reports');
+                const reports = await res.json();
+                
+                const badge = document.getElementById('reportsBadge');
+                if (reports.length > 0) {
+                    badge.textContent = reports.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+                
+                const container = document.getElementById('reportsList');
+                
+                if (reports.length === 0) {
+                    container.innerHTML = '<p class="text-white/50 text-center py-4">Нет жалоб на рассмотрении</p>';
+                    return;
+                }
+                
+                container.innerHTML = reports.map(report => `
+                    <div class="report-card bg-white/5 rounded-xl p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="text-sm text-white/50">Жалоба #${report.id.slice(0, 8)}</p>
+                                <p class="text-xs text-white/30">${formatDate(report.createdAt)}</p>
+                            </div>
+                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">На рассмотрении</span>
+                        </div>
+                        
+                        <div class="bg-black/30 rounded-lg p-3 mb-3">
+                            <p class="text-sm text-white/70 mb-1">Сообщение:</p>
+                            <p class="text-white">"${escapeHtml(report.messageContent)}"</p>
+                        </div>
+                        
+                        <p class="text-sm text-white/50 mb-4">Причина: ${escapeHtml(report.reason || 'Не указана')}</p>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="handleReport('${report.id}', 'delete_message')" 
+                                class="px-3 py-2 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition text-sm">
+                                Удалить сообщение
+                            </button>
+                            <button onclick="handleReport('${report.id}', 'mute_delete')" 
+                                class="px-3 py-2 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition text-sm">
+                                Мут + удалить
+                            </button>
+                            <button onclick="showReportBlockModal('${report.id}', '${report.reportedUserId}')" 
+                                class="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition text-sm">
+                                Заблокировать
+                            </button>
+                            <button onclick="dismissReport('${report.id}')" 
+                                class="px-3 py-2 rounded-lg bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition text-sm">
+                                Отклонить
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading reports:', e);
+            }
+        }
+        
+        async function handleReport(reportId, action, blockReason = null) {
+            try {
+                await fetch(API_URL + '/api/admin/reports/' + reportId + '/handle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, blockReason })
+                });
+                loadReports();
+            } catch (e) {
+                console.error('Error handling report:', e);
+            }
+        }
+        
+        function showReportBlockModal(reportId, userId) {
+            const reason = prompt('Причина блокировки:\n1. Нарушение правил MAXUTRA\n2. Отправка нежелательных сообщений\n\nВведите 1 или 2:');
+            
+            if (reason === '1') {
+                handleReport(reportId, 'block', 'Нарушение правил MAXUTRA');
+            } else if (reason === '2') {
+                handleReport(reportId, 'block', 'Нарушение правил MAXUTRA - отправка нежелательных сообщений');
+            }
+        }
+        
+        async function dismissReport(reportId) {
+            if (!confirm('Отклонить жалобу?')) return;
+            
+            try {
+                await fetch(API_URL + '/api/admin/reports/' + reportId + '/dismiss', { method: 'POST' });
+                loadReports();
+            } catch (e) {
+                console.error('Error dismissing report:', e);
+            }
+        }
+        
+        // Export/Import
+        async function exportUsers() {
+            try {
+                const res = await fetch(API_URL + '/api/admin/export');
+                const data = await res.json();
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'maxutra_users_' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showRecoveryMessage('✅ Экспорт успешно завершён!', 'success');
+            } catch (e) {
+                showRecoveryMessage('❌ Ошибка экспорта', 'error');
+            }
+        }
+        
+        async function importUsers() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                const users = JSON.parse(text);
+                
+                const res = await fetch(API_URL + '/api/admin/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ users })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    showRecoveryMessage('✅ Импортировано ' + data.count + ' пользователей!', 'success');
+                    loadStats();
+                } else {
+                    showRecoveryMessage('❌ ' + data.error, 'error');
+                }
+            } catch (e) {
+                showRecoveryMessage('❌ Ошибка чтения файла', 'error');
+            }
+            
+            document.getElementById('importFile').value = '';
+        }
+        
+        function showRecoveryMessage(text, type) {
+            const el = document.getElementById('recoveryMessage');
+            el.textContent = text;
+            el.className = 'mt-6 p-4 rounded-xl text-center ' + 
+                (type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50');
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+        
+        // Helpers
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(timestamp) {
+            const d = new Date(timestamp);
+            return d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // Init
+        init();
+    </script>
+</body>
+</html>
